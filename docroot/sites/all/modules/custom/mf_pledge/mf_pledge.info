@@ -1,0 +1,4 @@
+name = MF Pledge System
+description = "Custom pledge system using computed field"
+package = Moral Fibers
+core = 6.x

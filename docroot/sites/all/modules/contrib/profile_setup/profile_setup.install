@@ -1,0 +1,68 @@
+<?php
+// $Id: profile_setup.install,v 1.3.8.2 2009/03/24 07:28:55 thomjjames Exp $
+
+/**
+ * Implementation of hook_schema().
+ */
+function profile_setup_schema() {
+  $schema['profile_setup'] = array(
+    'description' => t('The fields required for the profile setup module'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('A user ID'),
+        'type' => 'int',
+        'unsigned' => 1,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'logins' => array(
+        'description' => t('Number of times a given user has logged in'),
+        'type' => 'int',
+        'unsigned' => 1,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function profile_setup_install() {
+  drupal_install_schema('profile_setup');
+	//make module be called last so the registration redirection doesn't mess with other modules
+	db_query("UPDATE {system} SET weight = 100 WHERE name = 'profile_setup'");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function profile_setup_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('profile_setup');
+  variable_del('profile_setup_oncomplete_redirect');
+  variable_del('profile_setup_category_exclude');
+  variable_del('profile_setup_change_username');
+  variable_del('profile_setup_step_order');
+  variable_del('profile_setup_use_js_loaders');
+  variable_del('profile_setup_user_pictures');
+  $result = db_query("SELECT name FROM {variable} WHERE name LIKE 'profile_setup_explain_%'");
+  while ($row = db_fetch_object($result)) {
+    variable_del($row->name);
+  }
+}
+
+/**
+ * Implementation of hook_update_N().
+ */
+function profile_setup_update_6000() {
+  $ret = array();
+	//make module be called last so the registration redirection doesn't mess with other modules
+	db_query("UPDATE {system} SET weight = 100 WHERE name = 'profile_setup'");
+  return $ret;
+}
+ 

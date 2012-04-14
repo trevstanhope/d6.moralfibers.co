@@ -1,0 +1,30 @@
+PROFILE SETUP INSTALL AND CONFIGURATION
+
+The profile setup module for Drupal 6 integrates with the pageroute module to give site admins the ultimate flexibility when creating a profile setup workflow because they can choose to use any type of profile "user" or "content or node" profiles.
+
+CONFIGURATION STEPS
+1) Install the module as normal
+
+2) Install the pageroute module
+
+3) Use the pageroute module and the profile_setup pageroute pages to create a profile setup workflow, see http://drupal.org/node/310795 for more help with the pageroute module.
+
+The profile_setup module provides 3 forms/page types for the pageroute module:
+- profile picture upload form : allows users to upload a profile picture
+- change username form : allows users to change their username
+- account category forms : provides the option to create a form from each of profile "edit" sub sections.
+  * Using Content Profile Module: If you are using Content Profile you much select Show a secondary tab below the user's edit tab under     Profile edit tab in the content profile content type tab per content type.
+  * Using Profile Module: If you are using core Profile account categories are automatically created as you create profile fields. 
+
+4) Once you have created your pageroute workflow navigate to the profile_setup configuration pages @ Administer > User Management > Profile Setup and select the pageroute "route" or workflow you want to use from the profile setup workflow.
+You could optionally make a different pageroute per user role and use the rules module to redirect users based on their user role when they register.
+
+5) Grant the "use profile setup" permission to users who should be able to use the profile setup workflow
+
+6) IMPORTANT!
+@ Administer > User Management > User Settings
+Uncheck the "Require e-mail verification when a visitor creates an account" checkbox so that users are logged in straight after registeration
+(TODO: Need to make this redirect work after email validation too)
+
+The profile setup will automatically redirect users when they first register but you can overide this using the rules module.
+

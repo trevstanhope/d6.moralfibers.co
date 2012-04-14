@@ -1,0 +1,15 @@
+PROFILE SETUP DRUPAL 5 TO DRUPAL 6 UPGRADING
+
+The profile setup module for Drupal 6 integrates with the pageroute module to give site admins the ultimate flexibility when creating a profile setup workflow but it does mean Drupal 5 users of this module must do the following:
+
+1) Backup your database & briefly put your site in maintenance mode
+
+2) Install the pageroute module (http://drupal.org/project/pageroute)
+
+3) Create a new pageroute and add a "user account editing form" page type for each of the profile module categories you where previously using with profile setup.
+
+4) Optionally you may also want to add a "user profile picture upload form" and "change username form" to your pageroute if you were using those steps with the Drupal 5 version.
+
+5) Navigate to Administer > User Management > Profile Setup and select the newly created pageroute from the "The profile setup pageroute" drop down menu.
+
+6) Test the new pageroute.

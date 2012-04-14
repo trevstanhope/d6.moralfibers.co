@@ -1,0 +1,13 @@
+docroot/sites/default/**
+!docroot/sites/default/default.settings.php
+!docroot/sites/default/settings.php
+*.DS_Store
+.DS_Store
+.buildpath
+.project
+.settings
+/docroot/sites/.DS_Store
+/docroot/sites/all/.DS_Store
+/docroot/sites/all/modules/.DS_Store
+/docroot/nbproject/private/
+/docroot/.idea/

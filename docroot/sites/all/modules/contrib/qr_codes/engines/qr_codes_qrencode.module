@@ -1,0 +1,81 @@
+<?php
+// $Id: qr_codes_qrencode.module,v 1.1.2.1 2010/06/28 17:09:33 loubabe Exp $
+
+define('QR_CODES_QRENCODE_PATH', variable_get('qr_codes_qrencode_path', qr_codes_qrencode_path('qrencode')));
+
+/**
+ * Implementation of hook_qr_codes().
+ */
+function qr_codes_qrencode_qr_codes($op, $a2 = NULL, $data = NULL, $width = NULL, $height = NULL, $margin = NULL) {
+  switch ($op) {
+    case 'list':
+      return array('qr_codes_qrencode:qrencode' => t('Libqrencode'));
+
+    case 'description':
+      return t('Qrencode. Libqrencode is a C library for encoding data in a QR Code. See <a href="http://megaui.net/fukuchi/works/qrencode/index.en.html">http://megaui.net/fukuchi/works/qrencode/index.en.html</a>');
+
+    case 'config':
+      if ($version = qr_codes_qrencode_version()) {
+        drupal_set_message(t('Qrencode @version is installed on your system.', array('@version' => $version)));
+      }
+      else {
+        drupal_set_message(t('<a href="@qrencode">Qrencode</a> is not available on the server, or the <a href="@settings">configuration settings</a> are incorrect.', array('@qrencode' => 'http://megaui.net/fukuchi/works/qrencode/index.en.html', '@settings' => url('admin/settings/qr_codes/qrencode'))), 'error');
+      }
+      $form['qr_codes_qrencode_path'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Path to encoder'),
+        '#default_value' => QR_CODES_QRENCODE_PATH,
+        '#size' => 60,
+        '#maxlength' => 255,
+        '#required' => TRUE,
+        '#description' => t('A file system path to the <code>qrencode</code> binary. On Unix systems, this would typically be located at <code>/usr/bin/qrencode</code> or <code>/usr/local/bin/qrencode</code>. On Mac OS X with MacPorts, the path would typically be <code>/opt/local/bin/qrencode</code>.'),
+      );
+      return $form;
+
+    case 'generate':
+      $options = array(
+        'output' => $a2,
+      );
+      if (!is_null($margin)) {
+        $options['margin'] = $margin;
+      }
+
+      $command = QR_CODES_QRENCODE_PATH;
+      foreach ($options as $k => $v) {
+        $command .= ' --'. $k . ($v === TRUE ? '' : '='. escapeshellarg((string)$v));
+      }
+
+      if ($handle = popen($command, 'w')) {
+        fwrite($handle, $data);
+        return pclose($handle) === 0 ? $options['output'] : FALSE;
+      }
+  }
+}
+
+/**
+ * Attempts to locate a qrencode binary in $PATH.
+ */
+function qr_codes_qrencode_path($binary) {
+  if (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN') {
+    return $binary; // let's not even go there
+  }
+  else {
+    $path = exec('type -P '. escapeshellarg($binary), $output, $result);
+    return $result === 0 ? $path : $binary;
+  }
+}
+
+/**
+ * Get Libqrencode version.
+ */
+function qr_codes_qrencode_version() {
+  exec(QR_CODES_QRENCODE_PATH .' --version 2>&1', $output, $result);
+  if ($result === 0) {
+    foreach ($output as $row) {
+      if (preg_match('!^qrencode version (.*)$!', $row, $matches)) {
+        return $matches[1];
+      }
+    }
+  }
+  return FALSE;
+}

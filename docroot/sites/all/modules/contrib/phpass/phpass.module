@@ -1,0 +1,122 @@
+<?php
+
+/**
+ * Implements hook_user.
+ */
+function phpass_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'submit':
+    case 'update':
+    case 'insert':
+      if (isset($edit['pass'])) {
+        // Function user_authenticate() applies a trim().
+        $edit['pass'] = trim($edit['pass']);
+      }
+      // Catch password changes and update the password hash.
+      if (!empty($edit['pass'])) {
+        phpass_user_rehash_password($account, $edit['pass']);
+      }
+      // Prevent the md5 from being saved on update.
+      $edit['pass'] = NULL;
+      break;
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function phpass_form_alter(&$form, $form_state, $form_id) {
+  // Perform replacement of the core validation functions.
+  if (!empty($form['#validate'])) {
+    $key = array_search('user_login_authenticate_validate', $form['#validate']);
+    if ($key !== FALSE) {
+      $form['#validate'][$key] = 'phpass_user_login_authenticate_validate';
+    }
+  }
+}
+
+/**
+ * Implements hook_system_info_alter().
+ */
+function phpass_system_info_alter(&$info, $file) {
+  if ($file->name == 'user' && $file->type == 'module') {
+    // Force user module to depend on this module so it cannot be
+    // disabled, since user logins would fail.
+    $info['dependencies'][] = 'phpass';
+  }
+}
+
+/**
+ * Replacement for user_login_authenticate_validate().
+ */
+function phpass_user_login_authenticate_validate($form, &$form_state) {
+  $form_state['values']['pass'] = trim($form_state['values']['pass']);
+  phpass_user_authenticate($form_state['values']);
+}
+
+/**
+ * Replacement for user_authenticate().
+ */
+function phpass_user_authenticate($form_values = array()) {
+  global $user;
+
+  require_once dirname(__FILE__) . '/password.inc';
+  $account = _phpass_load_user($form_values['name'], $form_values['pass']);
+  if ($account && drupal_is_denied('mail', $account->mail)) {
+    form_set_error('name', t('The name %name is registered using a reserved e-mail address and therefore could not be logged in.', array('%name' => $account->name)));
+  }
+
+  // Name and pass keys are required.
+  // The user is about to be logged in, so make sure no error was previously
+  // encountered in the validation process.
+  if (!form_get_errors() && !empty($form_values['name']) && !empty($form_values['pass']) && $account) {
+    $user = $account;
+    user_authenticate_finalize($form_values);
+    // Update user to new password hash if needed.
+    if (user_needs_new_hash($account)) {
+      phpass_user_rehash_password($account, $form_values['pass']);
+    }
+    return $user;
+  }
+  else {
+    watchdog('user', 'Login attempt failed for %user.', array('%user' => $form_values['name']));
+  }
+}
+
+/**
+ * Load a user account by name and password.
+ *
+ * @param $name
+ *   The user name.
+ * @param $password
+ *   The user's plaintext password.
+ */
+function _phpass_load_user($name, $password) {
+  $uid = FALSE;
+  if (!empty($name) && !empty($password)) {
+    $account = user_load(array('name' => $name, 'status' => 1));
+    if ($account && user_check_password($password, $account)) {
+      // Successful authentication.
+      $uid = $account->uid;
+    }
+  }
+  return $uid ? $account : FALSE;
+}
+
+/**
+ * Updates a user's password hash.
+ *
+ * @param $account
+ *   A user account object.
+ * @param $password
+ *   The user's current password.
+ */
+function phpass_user_rehash_password($account, $password, $hash_count_log2 = 0) {
+  require_once dirname(__FILE__) . '/password.inc';
+  $new_hash = user_hash_password($password, $hash_count_log2);
+  if ($new_hash) {
+    db_query("UPDATE {users} SET pass = '%s' WHERE uid = %d", $new_hash, $account->uid);
+    $account->pass = $new_hash;
+  }
+}
+

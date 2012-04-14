@@ -1,0 +1,13 @@
+;Id:$
+
+name = Google AdWords Conversion
+description = Adds Google AdWords Conversion Tracking javascript code to specific nodes.
+core = 6.x
+package = Analytics
+version = 6.x-1.x
+; Information added by drupal.org packaging script on 2011-04-12
+version = "6.x-1.4"
+core = "6.x"
+project = "google_adwords"
+datestamp = "1302609729"
+

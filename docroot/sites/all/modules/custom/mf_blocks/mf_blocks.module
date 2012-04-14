@@ -1,0 +1,280 @@
+<?php
+
+function mf_blocks_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#id'] == 'search-theme-form') {
+	  $form['search_theme_form']['#default_value'] = 'Start Your Search Here';
+  }
+}
+
+function mf_blocks_preprocess_user_profile(&$variables) {
+  //unset($variables['profile']['userpoints']);
+  //dsm($variables);
+}
+
+function mf_blocks_block($op = 'list', $delta = '', $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0]['info'] = t('Join Us');
+    $blocks[1]['info'] = t('How Can We Help?');
+    $blocks[2]['info'] = t('Ask Button');
+    $blocks[3]['info'] = t('Help');
+    $blocks[4]['info'] = t('Login');
+    $blocks[5]['info'] = t('Cart Count');
+    $blocks[6]['info'] = t('Customer Service');
+    $blocks[7]['info'] = t('Share Moral Fibers');
+    $blocks[8]['info'] = t('Our Mission');
+    $blocks[9]['info'] = t('Wear one');
+    $blocks[10]['info'] = t('Look book');
+    $blocks[11]['info'] = t('Artist of the week');
+    $blocks[12]['info'] = t('Amazing people, amazing stories');
+    $blocks[13]['info'] = t('Moral Fibers story');
+    $blocks[14]['info'] = t('Wear One Today');
+    $blocks[15]['info'] = t('Artists Header');
+    $blocks[16]['info'] = t('Team Page Header');
+    $blocks[17]['info'] = t('Philopsophy Page Header');
+    $blocks[18]['info'] = t('News and Updates Header');
+    $blocks[19]['info'] = t('Grassroots Logo');
+    $blocks[20]['info'] = t('Mens Shirts Header');
+    $blocks[21]['info'] = t ('Womens Shirts Header');
+    $blocks[22]['info'] = t('Artists Splash Image');
+    $blocks[23]['info'] = t('Ethical Splash Image');
+    $blocks[24]['info'] = t('Fashion Splash Image');
+    return $blocks;
+  }
+  if ($op == 'view') {
+    switch ($delta) {
+    case 0:
+      $block['content'] = theme_mf_blocks_join_us();
+      break;
+    case 1:
+      $block['content'] = theme_mf_blocks_help_you();
+      break;
+    case 2:
+      $block['content'] = theme_mf_blocks_ask();
+      break;
+    case 3:
+      $block['content'] = theme_mf_blocks_help();
+       break;
+    case 4:
+      $block['content'] = theme_mf_blocks_login();
+      break;
+    case 5:
+      $block['content'] = theme_mf_blocks_cart();
+      break;
+    case 6:
+      $block['content'] = theme_mf_blocks_customer_service();
+      break;
+    case 7:
+      $block['content'] = theme_mf_blocks_share_mf();
+      break;
+    case 8:
+      $block['content'] = theme_mf_blocks_our_mission();
+      break;
+    case 9:
+      $block['content'] = theme_mf_blocks_wear_one();
+      break;
+    case 10:
+      $block['content'] = theme_mf_blocks_look_book();
+      break;
+    case 11:
+      $block['content'] = theme_mf_blocks_artist_week();
+      break;
+    case 12:
+      $block['content'] = theme_mf_blocks_amazing_people();
+      break;
+    case 13:
+      $block['content'] = theme_mf_blocks_mf_story();
+      break;
+    case 14:
+      $block['content'] = theme_mf_blocks_wear();
+      break;
+    case 15:
+      $block['content'] = theme_mf_blocks_artists_header();
+      break;
+    case 16:
+      $block['content'] = theme_mf_blocks_team_header();
+      break;
+    case 17:
+      $block['content'] = theme_mf_blocks_philosophy_header();
+      break;
+    case 18:
+      $block['content'] = theme_mf_blocks_news_updates_header();
+      break;
+    case 19:
+      $block['content'] = theme_mf_blocks_grassroots();
+      break;
+    case 20:
+      $block['content'] = theme_mf_blocks_mens_header();
+      break;
+    case 21:
+      $block['content'] = theme_mf_blocks_womens_header();
+      break;
+    case 22:
+      $block['content'] = theme_mf_blocks_artists_splash_image();
+      break;
+    case 23:
+      $block['content'] = theme_mf_blocks_ethical_splash_image();
+      break;
+    case 24:
+      $block['content'] = theme_mf_blocks_fashion_splash_image();
+      break;
+    }
+    return $block;
+    
+  }
+}
+
+function theme_mf_blocks_join_us() {
+	$content .= '<a href="/grassroots"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/joinuslogo.png" /></a>';
+	
+		return $content;
+}
+
+function theme_mf_blocks_help_you() {
+	$content .= 'How can we help you? Let us know!';
+	
+		return $content;
+}
+
+function theme_mf_blocks_ask() {
+  $content .= '<a href="/ask"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/askbutton.png" /></a>';
+  
+  	return $content;
+}
+
+function theme_mf_blocks_help() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/questionmarkicon.png" />';
+  $content .= '<div class="text">Help</div>';
+  
+  	return $content;
+}
+
+function theme_mf_blocks_login() {
+	global $user;
+	
+	$content .= '<a href="/user">Your Account</a>';
+	
+		return $content;
+}
+
+function theme_mf_blocks_cart() {
+  $items = 0;
+  foreach (uc_cart_get_contents() as $item) {
+    $items += $item->qty;
+  }
+  	
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/shoppingcarticon.png" />';
+	$content .= '<div class="text"><a href="/cart">Cart (' . $items . ')</a></div>';
+	
+		return $content;
+}
+
+function theme_mf_blocks_customer_service() {
+  $content .= '<div class="happiness-guarentee">100% Happiness Guarantee</div>';
+  $content .= 'Your shoes will fit perfectly. If not, we will make your Returns & Exchanges easy. You see, we want you to...';
+  
+  	return $content;
+}
+
+function theme_mf_blocks_share_mf() {
+	
+	$content .= '<a href="http://vimeo.com/moralfibersco"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/vimeobutton.png" /></a>';
+	$content .= '<a href="http://twitter.com/#!/moralfibers"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/twitterbutton.png" /></a>';
+	$content .= '<a href="http://facebook.com/MoralFibers"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/facebookbutton.png" /></a>';
+		
+		return $content;
+}
+
+function theme_mf_blocks_our_mission() {
+  $content .= '<div id="our-mission">';
+  $content .= 'div class="our-mission-text">Moral Fibers aims to empower artists and communities worldwide.</div>';
+  $content .= '<div class="our-mission-founder">Matthew Brightman, CEO</div>';
+  $content .= '</div>';
+  
+  	return $content;
+}
+
+function theme_mf_blocks_look_book() {
+  $content .= '<a href="/lookbook"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/ad_1.png" /></a>';
+  	
+  	return $content;
+}
+
+function theme_mf_blocks_wear_one() {
+  $content .= '<a href="/shop"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/ad_2.png" /></a>';
+  
+  	return $content;
+}
+
+
+
+function theme_mf_blocks_artist_week() {
+  $content .= '<a href="/artists"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/ad_3.png" /></a>';
+  
+  	return $content;
+}
+
+function theme_mf_blocks_amazing_people() {
+  $content .= '<a href="/philosophy"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/ad_4.png" /></a>';
+  
+  	return $content;
+}
+
+function theme_mf_blocks_artists_header() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/artists_creatives.png" />';
+
+       return $content; 
+}
+
+function theme_mf_blocks_news_updates_header() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/banner_blog.png" />';
+
+       return $content; 
+}
+
+function theme_mf_blocks_team_header() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/banner_team.png" />';
+  
+    return $content;
+}
+
+function theme_mf_blocks_philosophy_header() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/banner_philosophy.png" />';
+  
+    return $content;
+}
+
+function theme_mf_blocks_grassroots() {
+  $content .= '<a href="/grassroots"><img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/grassroots_logo.png" /></a>';
+	
+	return $content;
+}
+
+function theme_mf_blocks_mens_header() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/banner_mens.png" />';
+	
+	return $content;
+}
+
+function theme_mf_blocks_womens_header() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/banner_womens.png" />';
+	
+	return $content;
+}
+
+function theme_mf_blocks_artists_splash_image() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/splash_artists.png" />';
+
+  return $content;
+}
+
+function theme_mf_blocks_ethical_splash_image() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/splash_ethical.png" />';
+
+  return $content;
+}
+
+function theme_mf_blocks_fashion_splash_image() {
+  $content .= '<img src="/' . drupal_get_path('theme', 'moralfibers') . '/images/splash_fashion.png" />';
+
+  return $content;
+}

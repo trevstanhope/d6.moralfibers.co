@@ -1,0 +1,423 @@
+<?php
+// $Id$
+
+/**
+ * Adds a variety of functionality to Ubercart make a product available for a limited time
+ * 
+ */
+
+/**
+ * @file
+ * Main file for the UC LTO module
+ *
+ * @ingroup uc_lto
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function uc_lto_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#uc_lto':
+// Help is incorporated in this manner as initial module development has been done in a manner
+// to make it simpler to add Advanced Help module support in the near future.
+      include('help/help.php');
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function uc_lto_perm() {
+  return array('administer uc limited time offer');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_lto_menu() {
+  return array(
+    'admin/store/settings/lto' => array(
+      'title' => 'Limited time offer settings',
+      'description' => 'Settings relevant to limited time offer.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('uc_lto_settings_form'),
+      'access arguments' => array('administer store'),
+      'file' => 'uc_lto.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function uc_lto_nodeapi(&$node, $op, $a3 = NULL) {
+
+// echo "<br /><br /><br />$node->title $op <br />";
+
+  static $expiration = NULL;
+
+  if (uc_product_is_product($node)) {
+
+    switch ($op) {
+
+      case 'validate':
+
+        if ($node->lto_type > 0) {
+          $expiration = strtotime($node->expiration);
+        }
+        else {
+          $expiration = NULL;
+        }
+        break;
+
+      case 'insert':
+      
+        $expiration = strtotime($node->expiration);
+
+        if ($node->lto_type > 0) {
+          db_query("INSERT INTO {uc_lto} (nid, expiration, type) VALUES ('%d', '%s', '%d')", $node->nid, $expiration, $node->lto_type);
+        } 
+        break;
+
+      case 'update':
+
+        if ($prev_expiration = db_result(db_query('SELECT expiration FROM {uc_lto} WHERE nid = %d', $node->nid))) {
+
+          if ($expiration !== NULL) {
+            db_query("UPDATE {uc_lto} SET expiration = '%s', type = '%d' WHERE nid = '%d'", $expiration, $node->lto_type, $node->nid);
+
+          }
+          elseif ($expiration === NULL) {
+            db_query("DELETE FROM {uc_lto} WHERE nid = '%d'", $node->nid);
+          }
+        }
+        elseif ($expiration !== NULL) {
+          db_query("INSERT INTO {uc_lto} (nid, expiration, type) VALUES ('%d', '%s', '%d')", $node->nid, $expiration, $node->lto_type);
+        }
+        break;
+
+      case 'delete':
+
+        db_query("DELETE FROM {uc_lto} WHERE nid = '%d'", $node->nid);
+        break;
+
+      case 'load':
+
+        $query = db_query("SELECT * FROM {uc_lto} WHERE nid = '%d'", $node->nid);
+        $result = db_fetch_object($query);
+
+        if ($result !== NULL) {
+          $node->expiration = $result->expiration;
+          $node->lto_type = $result->type;
+        }
+        break;
+
+      case 'view':
+
+        $query = db_query("SELECT * FROM {uc_lto} WHERE nid = '%d'", $node->nid);
+        $result = db_fetch_object($query);
+
+        if ($result != FALSE) {
+          $expiration = $result->expiration;
+          $node->lto_type = $result->type;
+       
+          $fields = variable_get('uc_lto_field_settings', array(
+            'uc_lto_box' => array(
+              'enabled' => TRUE,
+              'weight' => -3,
+            ),
+          ));
+
+          if ($fields['uc_lto_box']['enabled']) {
+            $node->content['uc_lto'] = array(
+              '#value' => drupal_get_form('uc_lto_status_form', $node, $a3),
+              '#weight' => $fields['uc_lto_box']['weight'],
+            );
+          }
+        }
+        break;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_node_type().
+ */
+function uc_lto_node_type($op, $info) {
+
+  switch ($op) {
+
+    case 'delete':
+
+      variable_del('uc_lto_lto_type_'. $info->type);
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function uc_lto_form_alter(&$form, $form_state, $form_id) {
+
+  if (uc_product_is_product_form($form)) {
+
+    $expiration = /* format_date(*/intval($form['#node']->expiration)/*, 'custom', 'r') */;
+
+    $defaultexpiration = time() + 3600;
+
+    if (isset($form['#node']->nid)) {
+      if (!empty($expiration)) {
+        $lto_default = $form['#node']->lto_type;
+      } 
+      else {
+        $lto_default = 0;
+      }
+    } 
+    else {
+      $lto_default = variable_get('uc_lto_lto_type_' . $form['#node']->type, 0);
+    }
+
+    $form['uc_lto'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Limited time offer settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#weight' => 2,
+      'timed_product_overrides_desc' => array(
+        '#type' => 'markup',
+        '#weight' => -8,
+        '#value' => t('<p>If activated, this product will expire at the time set below.  Add to Cart will be disabled.  The product will not be unpublished.  You can also enable content types / product classes to have this functionality enabled by default under the Content Type settings.</p> <p>The "Display Time of expiration" displays the date and time a product is no longer available for purchase.  The "Display time left w/o active countdown" and the "Active javascript countdown" options both display the time left (1 day, 1 hour, etc.).  One would display the time left when a page is loaded or refreshed while the other is an active "countdown clock".</p>'),
+      ),
+      'lto_type' => array(
+        '#type' => 'select',
+        '#title' => t('Make this a limited time offer product.'),
+        '#description' => t('Your selection here activates and configures the Limited Time Offer functionality.'),
+        '#default_value' => $lto_default,
+        '#options' => array(
+          '0' => 'Not Limited Time Offer',
+          '3' => 'LTO - Display time of expiration',
+          '6' => 'LTO - Display time left w/o active countdown',
+          '9' => 'LTO - Active javascript countdown',
+        ),
+        '#weight' => 0,
+      ),
+      'expiration' => array(
+        '#type' => 'date_popup',
+        '#title' => t('Expiration date &amp; time'),
+        '#description' => t('Select the date and time when this limited time offer product can no longer be purchased (relative to the server&rsquo;s local time).'),
+        '#default_value' => $expiration ? format_date($expiration, 'custom', 'Y-m-d H:i:s') : format_date($defaultexpiration, 'custom', 'Y-m-d H:i:s'),
+        '#weight' => 10,
+      ),
+    );
+  }
+
+  if ($form_id === 'uc_product_field_settings_form') {
+
+    $fields = variable_get('uc_lto_field_settings', array(
+      'uc_lto_box' => array(
+        'enabled' => TRUE,
+        'weight' => -3,
+      ),
+    ));
+    $form['fields']['uc_lto_box'] = array(
+      'enabled' => array(
+        '#type' => 'checkbox',
+        '#default_value' => $fields['uc_lto_box']['enabled'],
+      ),
+      'title' => array(
+        '#type' => 'markup',
+        '#value' => t('Limited time offer'),
+      ),
+      'weight' => array(
+        '#type' => 'weight',
+        '#delta' => 10,
+        '#default_value' => $fields['uc_lto_box']['weight'],
+      ),
+    );
+    // Resort the list, without #properties
+    $props = array();
+    $children = array();
+    foreach ($form['fields'] as $key => $val) {
+      if (strpos($key, '#') === 0) {
+        $props[$key] = $val;
+      }
+      else {
+        $children[$key] = $val;
+      }
+    }
+    uasort($children, 'uc_weight_sort');
+    $form['fields'] = $props + $children;
+    $form['#submit'][] = 'uc_lto_field_settings_submit';
+    $form['buttons']['reset']['#submit'][] = 'uc_lto_field_settings_submit';
+  }
+
+  if (strpos($form_id, 'uc_product_add_to_cart_form') !== FALSE) {
+    $time = time();
+    $nid = end(explode('_', $form_id));
+    $node = node_load($nid);
+    if ($node->expiration && $node->expiration <= $time) {
+      unset($form['submit']);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function uc_lto_form_node_type_form_alter(&$form) {
+
+  if (uc_product_is_product($form['#node_type']->type)) {
+
+    $form['uc_lto'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Limited time offer settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#weight' => 2,
+      'uc_lto_overrides_desc' => array(
+          '#type' => 'markup',
+          '#weight' => -8,
+          '#value' => t('<p>Check the box below to have new products created under this content type (product class) be a limited time offer product by default.</p> <p>The "Display Time of expiration" displays the date and time a product is no longer available for purchase.  The "Display time left w/o active countdown" and the "Active javascript countdown" options both display the time left (1 day, 1 hour, etc.).  One would display the time left when a page is loaded or refreshed while the other is an active "countdown clock".'),
+      ),
+      'uc_lto_lto_type' => array(
+        '#type' => 'select',
+        '#title' => t('Activate limited time offer functionality on this content type as default'),
+        '#description' => t('New products created under this product class (product content type) will use this setting by default when a new product is created.  Different settings can be used on a specific product under this product class by making a different selection when creating or editing a product.'),
+        '#default_value' => variable_get('uc_lto_lto_type_' . $form['#node_type']->type, FALSE),
+        '#options' => array(
+          '0' => 'Not Limited Time Offer',
+          '3' => 'LTO - Display time of expiration',
+          '6' => 'LTO - Display time left w/o active countdown',
+          '9' => 'LTO - Active javascript countdown',
+        ),
+        '#weight' => 0,
+      ),
+    );
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function uc_lto_theme($existing, $type, $theme, $path) {
+  return array(
+    'uc_lto_status' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
+ * Form embedded into node to display expiration status.
+ */
+function uc_lto_status_form(&$form_state, $node, $teaser) {
+  $form = array(
+    '#node' => $node,
+    '#teaser' => $teaser,
+    '#theme' => 'uc_lto_status',
+    'nid' => array(
+      '#type' => 'value',
+      '#value' => $node->nid,
+    ),
+  );
+
+  $time = time();
+  if ($node->expiration >= $time) {
+    $open = TRUE;
+    if ($node->lto_type == 3) {
+      $checktimeformat = variable_get('uc_lto_time_format', 'M d, Y \a\t g:i a');
+      if (empty($checktimeformat)) { 
+        variable_del('uc_lto_time_format'); 
+      }
+      $form['expiration'] = array(
+        '#title' => variable_get('uc_lto_expires_on_text', 'Expires on:'),
+        '#type' => 'item',
+        '#value' => format_date($node->expiration, 'custom', variable_get('uc_lto_time_format', 'M d, Y \a\t g:i a')),
+        '#weight' => -3,
+      );
+      empty($form['expiration']['#title']) ? $form['expiration']['#title'] = 'Expires on:' : $form['expiration']['#title'];
+    } 
+    else {
+      $in = $node->expiration - $time;
+      $form['expiration'] = array(
+        '#title' => variable_get('uc_lto_expires_in_text', 'Expires in:'),
+        '#type' => 'item',
+        '#value' => format_interval($in, variable_get('uc_lto_time_gran', 2)),
+        '#weight' => -3,
+      );
+      empty($form['expiration']['#title']) ? $form['expiration']['#title'] = 'Expires in:' : $form['expiration']['#title'];
+      if ($in < 60) { 
+        $form['expiration']['#attributes'] = array('class' => 'uc-lto-expiration-min');
+      }
+      elseif ($in < 3600) {
+        $form['expiration']['#attributes'] = array('class' => 'uc-lto-expiration-hour');
+      }
+      elseif ($in < 86400) {
+        $form['expiration']['#attributes'] = array('class' => 'uc-lto-expiration-day');
+      }
+    }
+  } 
+  else {
+    $open = FALSE;
+    $form['expiration'] = array(
+      '#title' => t('Expired:'),
+      '#type' => 'item',
+      '#value' => t('@time ago', array('@time' => format_interval($time - $node->expiration, variable_get('uc_lto_time_gran', 2)))),
+      '#attributes' => array('class' => 'uc-lto-expiration-expired'),
+      '#weight' => 4,
+    );
+  }
+  if ($open && !$teaser && $node->lto_type == 9) {
+    drupal_add_js(array(
+      'ucLTO' => array(
+         'expiration' => $node->expiration + variable_get('date_default_timezone', 0),
+         'timeGran' => intval(variable_get('uc_lto_time_gran', 2)),
+         'doCountdown' => TRUE,
+      ),
+    ), 'setting');
+    drupal_add_js(drupal_get_path('module', 'uc_lto') . '/uc_lto_timers.js', 'module');
+
+    $check_js_style = variable_get('uc_lto_js_style', '1');
+    if ($check_js_style == 1) {
+      drupal_add_js(drupal_get_path('module', 'uc_lto') . '/uc_lto.js', 'module');
+    } 
+    else {
+      global $theme_key;
+      drupal_add_js(drupal_get_path('theme', $theme_key) . '/' . variable_get('uc_lto_js_custom_path', FALSE));
+    }
+  }
+  return $form;
+}
+
+/**
+ * Theme the status form.
+ */
+function theme_uc_lto_status($form) {
+  drupal_add_css(drupal_get_path('module', 'uc_lto') . '/uc_lto.css');
+
+  $rows = "<div class='uc-lto-expiration-wrapper'>";
+  $rows .= "<div class='uc-lto-expiration-label'>";
+  $rows .= $form['expiration']['#title']; 
+  $rows .= "</div><div class='uc-lto-expiration'>"; 
+  $rows .= $form['expiration']['#value'];
+  $rows .= "</div></div>"; 
+
+  return $rows;
+
+}
+
+/**
+ * Save or delete the field settings.
+ */
+function uc_lto_field_settings_submit($form, &$form_state) {
+  if ($form_state['values']['op'] === t('Reset to defaults')) {
+    variable_del('uc_lto_field_settings');
+  }
+  else {
+    variable_set('uc_lto_field_settings', array(
+      'uc_lto_box' => $form_state['values']['fields']['uc_lto_box'],
+    ));
+  }
+}

@@ -1,0 +1,23 @@
+<?php
+
+function mf_ubercart_form_alter(&$form, &$form_state, $form_id) {
+	
+	if (substr($form_id, 0, 28) == 'uc_product_add_to_cart_form_') {
+		$form['submit'] = array(
+			'#type' => 'image_button',
+			'#value' => t(' '),
+			'#src' => drupal_get_path('theme', 'moralfibers') . '/images/addtocartbutton.png'
+			);
+	}
+	
+	if ($form['form_id']['#id'] == 'edit-uc-cart-view-form') {
+		unset($form['continue_shopping']);
+		
+		$form['update'] = array(
+			'#weight' => '-50',
+			'#type' => 'submit',
+			'#value' => 'Update Cart',
+			'#submit' => array('uc_cart_view_form_submit'),
+		);
+	}
+}

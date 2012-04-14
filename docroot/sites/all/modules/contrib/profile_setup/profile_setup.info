@@ -1,0 +1,21 @@
+; $Id: profile_setup.info,v 1.7.4.2 2009/03/24 07:28:55 thomjjames Exp $
+name = Profile Setup
+description = Prompts users to fill out profile fields when they login for the first time.
+package = User-related
+version = 6.x-1.x-dev
+dependencies[] = pageroute
+
+core = 6.x
+; Information added by drupal.org packaging script on 2009-03-20
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "profile_setup"
+datestamp = "1237551530"
+
+
+; Information added by drupal.org packaging script on 2009-10-14
+version = "6.x-3.0"
+core = "6.x"
+project = "profile_setup"
+datestamp = "1255532483"
+

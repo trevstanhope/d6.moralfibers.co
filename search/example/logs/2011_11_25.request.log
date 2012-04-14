@@ -1,0 +1,11 @@
+127.0.0.1 -  -  [25/11/2011:00:35:18 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [25/11/2011:00:35:18 +0000] "GET /solr/admin/luke?numTerms=0&wt=json HTTP/1.0" 200 4095 
+127.0.0.1 -  -  [25/11/2011:09:45:20 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [25/11/2011:09:45:20 +0000] "POST /solr/update?wt=json HTTP/1.0" 200 42 
+127.0.0.1 -  -  [25/11/2011:09:45:23 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [25/11/2011:09:45:23 +0000] "GET /solr/admin/luke?numTerms=0&wt=json HTTP/1.0" 200 4094 
+127.0.0.1 -  -  [25/11/2011:12:55:11 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [25/11/2011:12:55:11 +0000] "GET /solr/admin/luke?numTerms=0&wt=json HTTP/1.0" 200 4095 
+127.0.0.1 -  -  [25/11/2011:21:57:15 +0000] "POST /solr/update?wt=json HTTP/1.0" 200 43 
+127.0.0.1 -  -  [25/11/2011:21:57:15 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [25/11/2011:21:57:15 +0000] "GET /solr/admin/luke?numTerms=0&wt=json HTTP/1.0" 200 4095 

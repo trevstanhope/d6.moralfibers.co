@@ -1,0 +1,68 @@
+/* 
+    Document   : pledge
+    Created on : Jun 19, 2011, 8:55:24 AM
+    Author     : skottler
+    Description: Custom styles for the pledge system
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+.pledge-top {
+  background: #F2F2F2;
+  width: 160px;
+  padding: 20px;
+  margin: 0 0 15px 0;
+}
+
+.pledge-top div {
+  margin-bottom: 6px;
+}
+
+span.total-raised, span.pledge-count {
+  font-size: 18px;
+  color: #CE174C;
+  font-weight: bold;
+}
+
+span.raised-text, span.pledge-text {
+  color: #000000;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.view-artist-pledge span.uc-price-product {
+  color: #CCCCCC;
+  font-weight: bold;
+  font-size: 21px;
+  background: url(../images/pledge_price.png) no-repeat;
+  padding: 5px 70px 20px 70px;
+}
+
+div.pledge-header {
+  background: #000;
+	text-transform: uppercase;
+	color: #fff;
+	font-size: 24px;
+	padding: 6px 10px 6px 14px;
+	clear: both;
+	border-bottom: 2px dotted #fff;
+	margin-bottom: 15px;
+}
+
+div.pledge-header span.love-design {
+  color: #B7B7B7;
+}
+
+div.pledge-description {
+  padding: 10px 30px 10px 30px;
+  margin-bottom: 20px;
+  background: #F2F2F2;
+  line-height: 2;
+}
+
+.view-artist-pledge form {
+  margin-top: 10px;
+}

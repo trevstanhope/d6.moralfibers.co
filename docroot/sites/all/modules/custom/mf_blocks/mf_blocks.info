@@ -1,0 +1,5 @@
+; $Id: admin_menu.info,v 1.5.2.2 2010/07/28 02:04:11 sun Exp $
+name = MF Blocks
+description = "Custom blocks for pages on Moral Fibers"
+package = Moral Fibers
+core = 6.x

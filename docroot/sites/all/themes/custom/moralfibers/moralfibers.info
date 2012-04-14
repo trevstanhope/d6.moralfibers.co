@@ -1,0 +1,88 @@
+name        = Moral Fibers
+description = Custom zen-based theme for Moral Fibers
+
+screenshot = screenshot.png
+
+core       = 6.x
+base theme = zen
+
+stylesheets[all][]   = css/html-reset.css
+stylesheets[all][]   = css/wireframes.css
+stylesheets[all][]   = css/layout-fixed.css
+stylesheets[all][]   = css/page-backgrounds.css
+stylesheets[all][]   = css/tabs.css
+stylesheets[all][]   = css/messages.css
+stylesheets[all][]   = css/pages.css
+stylesheets[all][]   = css/block-editing.css
+stylesheets[all][]   = css/blocks.css
+stylesheets[all][]   = css/navigation.css
+stylesheets[all][]   = css/panels-styles.css
+stylesheets[all][]   = css/views-styles.css
+stylesheets[all][]   = css/nodes.css
+stylesheets[all][]   = css/comments.css
+stylesheets[all][]   = css/forms.css
+stylesheets[all][]   = css/fields.css
+stylesheets[all][]   = css/uc_cart.css
+stylesheets[all][]   = css/banner.css
+stylesheets[all][]   = css/moralfibers-styles.css
+stylesheets[all][]   = css/pledge.css
+stylesheets[print][] = css/print.css
+
+; stylesheets[handheld][] = css/mobile.css
+; stylesheets[only screen and (max-device-width: 480px)][] = css/iphone.css
+
+conditional-stylesheets[if IE][all][]       = css/ie.css
+conditional-stylesheets[if lte IE 6][all][] = css/ie6.css
+
+;scripts[] = js/cufon.js
+;scripts[] = js/rabbit_on_the_moon.js
+;scripts[] = js/moralfibers.js
+scripts[] = js/forms.js
+
+regions[top_left]		= Top Left
+regions[top_right]		= Top Right
+regions[top_join]		= Top Join-Us
+regions[sidebar_first]  = First sidebar
+regions[sidebar_second] = Second sidebar
+regions[navigation]     = Navigation bar
+regions[highlight]      = Highlighted content
+regions[content_top]    = Content top
+regions[content_bottom] = Content bottom
+regions[customer_service] = Customer Service
+regions[newsletter]		= Newsletter
+regions[share]		= Share Moral Fibers
+regions[artist_of_the_week] = Artist of the Week
+regions[our_mission]	= Our Mission
+regions[amazing_stories] = Amazing Stories
+regions[address]				= Address - Team Page
+regions[facebook]				= Facebook - Team Page
+regions[twitter]				= Twitter - Team Page
+regions[tshirt_photos]	= Photos - Tshirt Page
+regions[artist_art_design]	= Art & Design - Artist Node
+regions[artist_photo_gallery] = Photo Gallery - Artist Node
+regions[artist_video]		= Video - Artist Node
+regions[header_image]   = Right Header Image
+regions[header]         = Header
+regions[footer]         = Footer
+regions[page_closure]   = Page closure
+
+
+features[] = logo
+features[] = name
+features[] = slogan
+features[] = mission
+features[] = node_user_picture
+features[] = comment_user_picture
+features[] = search
+features[] = favicon
+features[] = primary_links
+features[] = secondary_links
+
+settings[zen_block_editing]        = 1
+settings[zen_breadcrumb]           = no
+settings[zen_breadcrumb_separator] = ' › '
+settings[zen_breadcrumb_home]      = 1
+settings[zen_breadcrumb_trailing]  = 1
+settings[zen_breadcrumb_title]     = 0
+settings[zen_rebuild_registry]     = 1
+settings[zen_wireframes]           = 0

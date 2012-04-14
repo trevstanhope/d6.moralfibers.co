@@ -1,0 +1,15 @@
+name = Ubercart Affiliate v2
+description = Tracks affiliate site orders and commissions.
+dependencies[] = uc_store
+dependencies[] = uc_order
+dependencies[] = uc_product
+package = Ubercart - extra
+core = 6.x
+
+
+; Information added by drupal.org packaging script on 2011-03-15
+version = "6.x-2.6"
+core = "6.x"
+project = "uc_affiliate2"
+datestamp = "1300185669"
+

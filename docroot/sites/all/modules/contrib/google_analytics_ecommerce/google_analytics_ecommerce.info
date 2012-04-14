@@ -1,0 +1,12 @@
+name = Google Analytics Ecommerce
+description = Adds eCommerce transation tracking to the Google Analytics module for any content type
+dependencies[] = googleanalytics
+core = 6.x
+php = 5.0
+
+; Information added by drupal.org packaging script on 2011-07-01
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "google_analytics_ecommerce"
+datestamp = "1309479807"
+

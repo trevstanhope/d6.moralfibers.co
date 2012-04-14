@@ -1,0 +1,29 @@
+<?php
+// $Id: qr_codes_qrencode.install,v 1.1.2.1 2010/06/28 17:09:33 loubabe Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function qr_codes_qrencode_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE '%s_%%'", 'qr_codes_qrencode');
+  cache_clear_all('variables', 'cache');
+}
+
+/**
+ * Implementation of hook_requirements().
+ */
+function qr_codes_qrencode_requirements($phase) {
+  $status = array();
+
+  if ($phase == 'runtime') {
+    $version = qr_codes_qrencode_version();
+    $status['qr_codes_qrencode_libqrencode'] = array(
+      'title' => t('Qrencode'),
+      'value' => $version ? t('qrencode @version', array('@version' => (string)$version)) : t('Not available'),
+      'description' => $version ? '' : t('<a href="@qrencode">Qrencode</a> is not available on the server, or the <a href="@settings">configuration settings</a> are incorrect.', array('@qrencode' => 'http://megaui.net/fukuchi/works/qrencode/index.en.html', '@settings' => url('admin/settings/qr_codes/qrencode'))),
+      'severity' => $version ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+    );
+  }
+
+  return $status;
+}

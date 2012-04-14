@@ -1,0 +1,157 @@
+<?php
+
+/**
+ * Implements hook_schema_alter().
+ */
+function phpass_schema_alter(&$schema) {
+  $schema['users']['fields']['pass']['length'] = 128;
+}
+
+/**
+ * Implements hook_install().
+ */
+function phpass_install() {
+  // Change the length of {users}.pass from 32 characters to 128.
+  $ret = array();
+  db_change_field($ret, 'users', 'pass', 'pass', array(
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+  return $ret;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function phpass_uninstall() {
+  // This will almost never be called, but is useful for development.
+  variable_del('phpass_user_update_hash_count');
+  variable_del('phpass_user_update_cli_orderby');
+  variable_del('phpass_user_update_cli_count');
+}
+
+/**
+ * Implements hook_enable().
+ */
+function phpass_enable() {
+  $cli = (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
+  $user_count = db_result(db_query("SELECT COUNT(uid) FROM {users} WHERE uid > 0"));
+  if ($cli || ($user_count <= 1000)) {
+    // Don't bother with batched operations.
+    require_once dirname(__FILE__) . '/password.inc';
+    //  Hash again all current hashed passwords.
+    // Variables defined here should be overriden in $conf in settings.php if needed.
+    // The count is in log 2, so 11 means 2048 iterations. This is much lower than
+    // the standard 14 (by a fator of 8) for speed during mass conversion.
+    $hash_count_log2 = variable_get('phpass_user_update_hash_count', 11);
+    // An alternative ordering may be desired, such as 'u.login DESC'.
+    $order_by = variable_get('phpass_user_update_cli_orderby', 'u.uid ASC');
+    // Number of users to conver per iteration.
+    $count = variable_get('phpass_user_update_cli_count', 10000);
+    $from = 0;
+    do {
+      $has_rows = FALSE;
+      $result = db_query_range("SELECT u.uid, u.pass FROM {users} u WHERE u.uid > 0 ORDER BY " . $order_by, $from, $count);
+      $from += $count;
+      while ($account = db_fetch_object($result)) {
+        $has_rows = TRUE;
+        // If the $account->pass value is not a MD5 hash (a 32 character
+        // hexadecimal string) then skip it.
+        if (!preg_match('/^[0-9a-f]{32}$/', $account->pass)) {
+          continue;
+        }
+
+        $new_hash = user_hash_password($account->pass, $hash_count_log2);
+        if ($new_hash) {
+          // Indicate an updated password.
+          $new_hash  = 'U' . $new_hash;
+          db_query("UPDATE {users} set pass = '%s' WHERE uid = %d", $new_hash, $account->uid);
+        }
+      }
+    } while ($has_rows);
+  }
+  else {
+    $t = get_t();
+    $batch = array(
+      'operations' => array(
+        array('phpass_user_update_hashes',array()),
+      ),
+      'title' => $t('Converting passwords'),
+      'init_message' => $t('Starting password conversion'),
+      'error_message' => $t('Error converting passwords'),
+      'file' => __FILE__,
+    );
+    batch_set($batch);
+  }
+}
+
+/**
+ * Re-hashes all current passwords to improve security. This may be a
+ * lengthy process, and is performed batch-wise.
+ *
+ * Adapted from Drupal 7 user_update_7000()
+ */
+function phpass_user_update_hashes(&$context) {
+  $context['finished'] = 0;
+  // Lower than DRUPAL_HASH_COUNT to make the update run at a reasonable speed.
+  $hash_count_log2 = variable_get('phpass_user_update_hash_count', 11);
+  // Multi-part update.
+  if (!isset($context['sandbox']['user_from'])) {
+    $context['sandbox']['user_from'] = 0;
+    $context['sandbox']['user_count'] = db_result(db_query("SELECT COUNT(uid) FROM {users} WHERE uid > 0"));
+  }
+  require_once dirname(__FILE__) . '/password.inc';
+  //  Hash again all current hashed passwords.
+  $has_rows = FALSE;
+  // Update this many per page load.
+  $count = 1000;
+  $result = db_query_range("SELECT uid, pass FROM {users} WHERE uid > 0 ORDER BY uid", $context['sandbox']['user_from'], $count);
+  while ($account = db_fetch_object($result)) {
+    $has_rows = TRUE;
+    // If the $account->pass value is not a MD5 hash (a 32 character
+    // hexadecimal string) then skip it.
+    if (!preg_match('/^[0-9a-f]{32}$/', $account->pass)) {
+      continue;
+    }
+
+    $new_hash = user_hash_password($account->pass, $hash_count_log2);
+    if ($new_hash) {
+      // Indicate an updated password.
+      $new_hash  = 'U' . $new_hash;
+      db_query("UPDATE {users} set pass = '%s' WHERE uid = %d", $new_hash, $account->uid);
+    }
+  }
+  $context['finished'] = $context['sandbox']['user_from']/$context['sandbox']['user_count'];
+  $context['sandbox']['user_from'] += $count;
+  if (!$has_rows) {
+    $context['finished'] = 1;
+  }
+}
+
+/**
+ * Update from 1.x branch.
+ */
+function phpass_update_6200(&$sess) {
+  $ret = array();
+  if (!isset($sess['context'])) {
+    $ret = array_merge($ret, phpass_install());
+    $sess['context'] = array();
+  }
+  if (db_table_exists('user_phpass')) {
+    // Copy any portable hashes to the {users} table from {phpass}. The subquery
+    // for should work for both postgres and mysql (I think).
+    if (variable_get('user_hash_method', 'phpass') == 'phpass' && variable_get('user_hash_portable', TRUE)) {
+      $ret[] = update_sql("UPDATE {users} u SET u.pass = (SELECT up.hash FROM {user_phpass} up WHERE up.uid = u.uid) WHERE EXISTS (SELECT up.hash FROM {user_phpass} up WHERE up.uid = u.uid)");
+    }
+    db_drop_table($ret, 'user_phpass');
+    variable_del('user_hash_method');
+    variable_del('user_hash_strength');
+    variable_del('user_hash_portable');
+  }
+  phpass_user_update_hashes($sess['context']);
+  $ret['#finished'] = $sess['context']['finished'];
+  return $ret;
+}
+

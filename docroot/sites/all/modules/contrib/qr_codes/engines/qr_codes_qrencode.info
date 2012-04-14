@@ -1,0 +1,12 @@
+; $Id: qr_codes_qrencode.info,v 1.1.2.1 2010/06/28 17:09:33 loubabe Exp $
+name = "QR Codes - Libqrencode"
+description = "Use Libqrencode command line for builing QR Codes"
+core = 6.x
+package = "QR Codes"
+dependencies[] = qr_codes
+; Information added by drupal.org packaging script on 2010-07-11
+version = "6.x-1.0-beta3"
+core = "6.x"
+project = "qr_codes"
+datestamp = "1278846308"
+

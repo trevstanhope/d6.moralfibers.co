@@ -1,0 +1,10 @@
+<?php
+// $Id: qr_codes.install,v 1.1.2.1 2010/06/28 17:09:33 loubabe Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function qr_codes_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE '%s_%%'", 'qr_codes');
+  cache_clear_all('variables', 'cache');
+}

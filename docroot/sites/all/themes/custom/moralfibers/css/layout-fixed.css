@@ -1,0 +1,676 @@
+/**
+ * @file
+ * Layout Styling (DIV Positioning)
+ *
+ * Define CSS classes to create a table-free, 3-column, 2-column, or single
+ * column layout depending on whether blocks are enabled in the left or right
+ * columns.
+ *
+ * This layout is based on the Zen Columns layout method.
+ *   http://drupal.org/node/201428
+ *
+ * Only CSS that affects the layout (positioning) of major elements should be
+ * listed here.  Such as:
+ *   display, position, float, clear, width, height, min-width, min-height
+ *   margin, border, padding, overflow
+ */
+
+
+/*
+ * Body
+ */
+body {
+  font-family: "Helvetica", Arial;
+  font-size: 12px;
+	line-height: 1.5em;
+}
+
+#page-wrapper,
+.region-page-closure {
+  /*
+   * If you want to make the page a fixed width and centered in the viewport,
+   * this is the standards-compliant way to do that. See also the ie6.css file
+   * for the necessary IE5/IE6quirks hack to center a div.
+   */
+  margin-left: auto;
+  margin-right: auto;
+  width: 960px;
+}
+
+#page {
+}
+
+/*
+ * Header
+ */
+#header {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+#header .section {
+}
+
+.region-header {
+  clear: both; /* Clear the logo */
+}
+
+/*
+ * Main (container for everything else)
+ */
+#main-wrapper {
+  position: relative;
+}
+
+#main {
+}
+
+/*
+ * Structure: Content, Sidebars
+ */
+.one-sidebar #content-area {
+	width: 640px;
+	float: left;
+}
+
+.one-sidebar .sidebar {
+	width: 280px;
+	float: right;
+}
+
+/*
+ * Navigation
+ */
+#navigation {
+	clear: both;
+	margin-top: 0px;
+}
+
+.with-navigation #content,
+.with-navigation .region-sidebar-first,
+.with-navigation .region-sidebar-second {
+
+}
+
+.region-sidebar-second p {
+  line-height: 1.5;
+}
+
+.region-sidebar-second .block-mf_blocks {
+  margin-top: 20px;
+}
+
+#navigation .section {
+}
+
+#navigation ul /* Primary and secondary links */ {
+  margin: 0;
+  padding: 0;
+  text-align: left; /* LTR */
+}
+
+#navigation li /* A simple method to get navigation links to appear in one line. */ {
+  float: left; /* LTR */
+  margin: 17px 0 13px 13px; /* LTR */
+}
+
+#navigation li a {
+  padding-right: 10px;
+}
+
+#main-menu li.first {
+  border-left: 1px solid #CCC;
+  padding-left: 13px;
+}
+
+/*
+ * Footer
+ */
+#footer {
+}
+
+#footer .section {
+}
+
+/*
+ * Closure
+ */
+.region-page-closure /* See also the #page-wrapper declaration above that this div shares. */ {
+}
+
+/*
+ * Prevent overflowing content
+ */
+#header,
+#content,
+#navigation,
+.region-sidebar-first,
+.region-sidebar-second,
+#footer,
+.region-page-closure {
+  overflow: visible;
+  word-wrap: break-word; /* A very nice CSS3 property */
+}
+
+#navigation {
+  overflow: hidden; /* May need to be removed if using a dynamic drop-down menu */
+}
+
+ul#main-menu li a {
+  font-variant: small-caps;
+  text-decoration: none;
+  font-size: 14px;
+  font-family: "Helvetica", Arial;
+  padding-bottom: 20px;
+}
+/*
+ * If a div.clearfix doesn't have any content after it and its bottom edge
+ * touches the bottom of the viewport, Firefox and Safari will mistakenly
+ * place several pixels worth of space between the bottom of the div and the
+ * bottom of the viewport. Uncomment this CSS property to fix this.
+ * Note: with some over-large content, this property might cause scrollbars
+ * to appear on the #page-wrapper div.
+ */
+/*
+#page-wrapper {
+  overflow-y: hidden;
+}
+*/
+
+
+/* custom styles for header */
+#search-box {
+  width: 200px;
+  float: right;
+	margin-right: 20px;
+}
+
+#search-box input {
+	background: url(../images/search_background.png) no-repeat left center;
+	height: 35px;
+	padding: 0 5px 0 37px;
+	width: 176px;
+	border: #A9B4B7 solid 1px;
+	font-size: 12px;
+	font-family: "Helvetica", Arial;
+	color: #A9B4B7;
+	margin-right: 25px;
+}
+
+#search-box .form-submit {
+	display: none;
+}
+
+#header-fixed-container {
+  width: 960px;
+  margin: 0 auto;
+  font-size: 10px;
+  color: #A9B4B7;
+	position: relative;
+	height: 45px;
+}
+
+#header-fixed-container .region-wrapper {
+  position: relative;
+  float: right;
+	height:35px;
+}
+
+#header-fixed-container a {
+  color: #A9B4B7;
+  text-decoration: none;	
+}
+
+#header-fixed-container .region-top-left {
+  float: right;
+  width: 300px;
+  margin-top: 5px;
+}
+
+
+#block-mf_blocks-1 {
+  float: left;
+  width: 175px;
+}
+
+#block-mf_blocks-2 {
+  width: 120px;
+}
+
+#block-mf_blocks-3 {
+  margin-left: 25px;
+  float: left;
+  width: 55px;
+  padding-top: 2px;
+}
+
+#block-mf_blocks-3 img {
+  margin-right: 5px;
+  float: left;
+}
+
+#block-mf_blocks-3 .text {
+  width: 30px;	
+  float: right;
+}
+
+#block-mf_blocks-4 {
+  float: right;
+  width: 70px;
+  margin-top: -30px;
+  padding-right: 10px;
+}
+
+#block-mf_blocks-5 {
+  width: 60px;
+  margin-left: 90px;	
+  margin-right: 70px;
+  margin-top: 3px;
+}
+
+#block-mf_blocks-5 .text {
+  float: right;	
+  margin-top: 0px;
+}
+
+#header-fixed-container .region-top-right {
+  background: #F5F5F5;
+  padding-top: 8px;
+  height: 32px;
+  width: 250px;
+}
+
+#header-fixed-container .region-top-join {
+  float: right;
+  width: 120px;
+}
+
+#header-fixed-container .region-top-join img {
+  float: right;
+}
+
+#user-login-form {
+  width: 300px;
+}
+
+#user-login-form .form-item {
+  width: 120px;
+}
+
+fieldset {
+  border: 0 !important;
+}
+
+#footer-bottom {
+  background: url(../images/footerborder.png) no-repeat;
+  width: 944px;
+  height: 97px;
+  margin: 140px 0 10px 0;
+  padding-top: 25px;
+  clear: both;
+}
+
+/* Custom hacks for splash pages */
+.page-splash-artists #footer-bottom, .page-splash-ethical #footer-bottom, .page-splash-fashion #footer-bottom {
+  margin: 20px 0 10px 0;
+}
+
+.page-splash-artists #block-block-15 {
+  margin: 60px 0 0 35px;
+}
+
+.page-splash-ethical #block-block-15 {
+  margin: 70px 0 0 280px;
+}
+
+.page-splash-fashion #block-block-15 {
+  margin: -375px 0 0 0;
+}
+
+.region-customer-service {
+  width: 310px;
+  float: left;
+}
+
+#block-block-11 {
+  width: 260px;
+  padding: 0 20px 12px 20px;
+}
+
+#block-block-11 .content {
+  font-family: Helvetica;
+  font-size: 12px;
+  color: #374241;
+  line-height: 1.2;
+}
+
+#block-block-11 .happiness-guarentee {
+  color: #547FA3;
+  font-weight: bold;
+}
+
+.region-share-mf {
+  width: 300px;
+  float: right;
+}
+
+.region-newsletter {
+  width: 300px;
+  float: left;
+}
+
+#block-mf_blocks-7 {
+	float: right;
+	width: 300px;
+}
+
+#block-mf_blocks-7 .content {
+  margin: 10px 0 0 50px;
+}
+
+#block-block-1 .content {
+  float: left;
+}
+
+#block-mf_blocks-7 img {
+  margin-right: 20px;
+}
+
+
+/* custom style overrides for mailchimp signup */
+#mc_embed_signup {
+  width: 250px;
+}
+
+#mc-embedded-subscribe-form {
+  margin-top: -12px;
+}
+
+.mc-field-group {
+  width: 250px;
+}
+
+#mc_embed_signup input[type="text"] {
+  width:180px;
+  border:1px solid #e9eced;
+  color:#aeb8bb;
+  font-family:Helvetica,Arial,Verdana,sans-serif;
+  background:url(../images/newsletter-bg.png) 6px 6px no-repeat;
+  padding-left:40px;
+  padding-top:8px;
+  padding-bottom:8px;
+  font-size:12px;
+}
+
+/* custom styles for product page */
+.section-tshirt h2.page-title {
+  background: none;
+}
+
+.section-tshirt .region-tshirt-photos {
+	width: 633px;
+}
+
+/* custom styles for FAQ page */
+.view-faq {
+  font-size: 11px;
+}
+
+.view-faq .view-header {
+  background: url(../images/faq_bg.png) no-repeat;
+  height: 50px;
+  padding: 3px 0 0 10px;
+}
+
+.view-faq .view-header p {
+  font-size: 24px;
+  color: white;
+}
+
+.view-faq .views-row {
+  border-bottom: #AAA dashed 1px;
+  margin-top: 10px;
+  padding: 8px 20px 8px 20px;
+}
+
+.view-faq .views-field-title {
+  font-weight: bold;
+  color: #495A5E;
+  font-family: "Helvetica", Arial;
+  font-size: 12px;
+}
+
+.view-faq .views-field-body {
+  color: #495A5E;
+  font-family: "Helvetica", Arial;
+  font-size: 12px;
+}
+
+.view-faq p {
+  margin: 4px 0 8px 0;
+}
+
+/* custom styles for team page */
+.right {
+  text-align: right;
+}
+
+.page-team .node-type-page .content {
+  padding-left: 300px;
+  background: url(../images/mf_star.png) no-repeat;
+  min-height: 191px;
+}
+
+.page-team .node-type-page .content p {
+  line-height: 2;
+  color: #495A5E;
+}
+
+#team-address {
+	background: url(../images/team_contact.png) no-repeat;
+	float: left;
+	color: white;
+	padding: 60px 100px 50px 90px;
+	line-height: 2;
+	margin-left: 10px 	;
+}
+
+#team-address a {
+	color: white;
+	text-decoration: none;
+}
+
+#block-block-7, #block-block-8 {
+	float: left;
+	width: 300px;
+	padding-right: 25px;
+}
+
+#block-block-8 {
+  padding-left: 5px;
+}
+
+#block-block-9 {
+  float: right;
+  width: 300px;
+}
+
+#block-block-9 {
+  padding-right: 0;
+}
+
+.mens-shop {
+  margin-top: -240px;
+  margin-left: 70px;
+  color: white;
+  font-size: 28px;
+  text-transform: uppercase;
+}
+
+.mens-shop a, .womens-shop a {
+  text-decoration: none;
+  color: white;
+}
+
+.womens-shop {
+  margin-left: 70px;
+  margin-top: 10px;
+  color: white;
+  font-size: 28px;
+  text-transform: uppercase;
+}
+
+/* custom styles for philosophy page */
+
+.page-philosophy .node-type-page .content {
+  padding-left: 300px;
+  background: url(../images/mf_star.png) no-repeat;
+  min-height: 191px;
+}
+
+.page-philosophy .node-type-page .content p {
+  line-height: 2;
+  color: #495A5E;
+}
+
+.page-philosophy .region-content-top {
+	background: url(../images/philosophy_header.png) no-repeat;
+	height: 300px;
+}
+
+.page-philosophy .region-content-top h2.title {
+	float: right;
+	text-align: left;
+	font-size: 36px;
+	width: 270px;
+	color: white;
+	margin-top: 10px;
+}
+
+.page-philosophy .region-content-top .content p {
+	color: white;
+	line-height: 1.4;
+	font-size: 14px;
+	float: left;
+	position: relative;
+	left: 0;
+	text-align: left;
+}
+
+.page-philosophy .region-content-top .right {
+	text-align: right;
+	color: white;
+	line-height: 2;
+	font-size: 14px;
+}
+
+/* custom styles for the artists page */
+.page-artists .node-type-page .content {
+  padding: 10px 30px 10px 30px;
+  background: #F2F2F2;
+  line-height: 2;
+}
+
+.view-artist-random-listing .views-field-field-artist-featured-image-fid {
+  font-size: 12px;
+  color: black;
+}
+
+.view-artist-random-listing .views-field-field-artist-hometown-text-value {
+  font-weight: bold;
+  color: #269CDD;
+	font-style: italic;
+}
+
+.view-artist-random-listing .view-footer a {
+  float: right;
+  background: black;
+  color: white;
+  padding: 10px 15px 10px 15px;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+#block-views-artist_of_month-block_1 .views-field-title {
+	margin-left: 700px;
+	width: 300px;
+	color: white;
+}
+
+/* custom styles for news and updates page (blog) */
+.page-news-updates .view-news-updates .views-row {
+  border-bottom: #A9B4B7 dashed 1px;
+  padding: 10px 5px 25px 5px;
+}
+
+.view-news-updates .view-header {
+  background: url(../images/star.png) no-repeat black left center;
+  height: 25px;
+  padding: 0px 0 3px 45px;
+  font-size: 24px;
+  color: white;
+  margin-bottom: 2px !important;
+}
+
+.block .node-type-blog .view-news-updates .views-row {
+  margin-bottom: 10px;
+}
+
+.view-news-updates .view-header p {
+  padding-top: 2px;
+}
+
+.view-news-updates .view-header span {
+  color: #A9B4B7;
+}
+
+.view-news-updates p {
+  padding: 10px 0 0 0;
+  margin: 0;
+}
+
+.view-news-updates .views-field-title {
+	float: left;
+	font-size: 18px;
+	color: #495A5E;
+	font-weight: bold;
+}
+
+.block .view-news-updates .views-field-title a {
+  line-height: 1.2;
+  font-size: 14px;
+}
+
+.section-news-updates .view-news-updates .views-field-title {
+  width: 570px;
+}
+
+.view-news-updates .views-field-created {
+  width: 100px;
+  float: right;
+  text-transform: uppercase;
+  color: #A9B4B7;
+}
+
+.view-news-updates .views-field-field-blog-image-fid {
+  float: left;
+  width: 100%;
+}
+
+.view-news-updates .views-field-view-node a {
+  float: right;
+  margin-top: 5px;
+  font-style: oblique;
+  color: #2CA4CE;
+  font-family: Georgia;
+}
+
+/* ubercart customizations */
+input#edit-checkout.form-submit {
+    background: url(/sites/all/modules/custom/mf_ubercart/images/checkout.png) no-repeat;
+    text-indent: -9999px;
+    width: 282px;
+    height: 80px;
+    border: none;
+}

@@ -1,0 +1,67 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install, update and uninstall functions for the UC Limited Time Offer module
+ *
+ * @ingroup uc_lto
+ */
+
+
+/**
+ * Implementation of hook_schema().
+ */
+function uc_lto_schema() {
+  return array(
+    'uc_lto' => array(
+      'description' => 'Information about products that are timed products.',
+      'fields' => array(
+        'nid' => array(
+          'description' => 'The node id of the product.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'expiration' => array(
+          'description' => 'The time when this product expires (ends).',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'type' => array(
+          'description' => 'If a timed product and type.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+      ),
+      'primary key' => array('nid'),
+      'indexes' => array(
+        'expiration' => array('expiration'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_lto_install() {
+  drupal_install_schema('uc_lto');
+  drupal_set_message(t('Ubercart Limited Time Offer module installed successfully.'), 'warning');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_lto_uninstall() {
+  drupal_uninstall_schema('uc_lto');
+  // Delete all the uc lto variables and then clear the variable cache
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_lto_%'");
+  cache_clear_all('variables', 'cache');
+  drupal_set_message(t('Ubercart Limited Time Offer module uninstalled successfully.'), 'warning');
+}

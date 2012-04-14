@@ -1,0 +1,703 @@
+<?php
+
+/**
+ * @file
+ * Adds the required Javascript to the checkout completion page to allow
+ * e-commerce statistics tracking through Google Analytics.
+ *
+ * Refer to http://code.google.com/apis/analytics/docs/gaTrackingEcommerce.html
+ * for documentation on the functions used to submit e-commerce statistics to
+ * Google Analytics.
+ *
+ * @author: Nacho Montoya <http://drupal.org/user/64182>
+ */
+
+/**
+ * Implementation of hook_enable().
+ */
+function google_analytics_ecommerce_enable() {
+  // Set the weight of the Google Analytics eCommerce module smaller than 
+  // the weight of the main Google Analytics module. This is necessary to 
+  // use its GLOBAL variable: 'google_analytics_prepend' for integration
+  $weight = db_result(db_query("SELECT weight FROM {system} WHERE name = '%s'", 'googleanalytics'));
+  db_query("UPDATE {system} SET weight = %d WHERE name = '%s'", $weight-2, 'google_analytics_ecommerce');
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function google_analytics_ecommerce_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if (variable_get('gae_enabled_' . $node->type, 0)) {
+    // We track node inserts, and optionally node updates (this can be configured in content type settings form)
+    if ($op == 'insert' || ($op == 'update' && variable_get('gae_onupdate_' . $node->type, 0) == 1)) {
+      $_SESSION['gae_nid'] = $node->nid;
+      $_SESSION['gae_nid_type'] = $node->type;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_footer().
+ */
+function google_analytics_ecommerce_footer($main = 0) {
+  // Check to see if gae SESSION variable is set
+  if (is_numeric($_SESSION['gae_nid'])) {
+    // Check if we are tracking only in particular path
+    if (variable_get('gae_url_' . $_SESSION['gae_nid_type'], 0)) {
+      $tracked_path = variable_get('gae_url_value_' . $_SESSION['gae_nid_type'], 0);
+      // This code is similar to block module visibility control
+      $current_path = drupal_get_path_alias($_GET['q']);
+      // Compare with the internal and path alias (if any).
+      $page_match = drupal_match_path($current_path, $tracked_path);
+      if ($current_path != $_GET['q']) {
+	$page_match = $page_match || drupal_match_path($_GET['q'], $tracked_path);
+      }
+      // If we are not in the tracked path, just leave
+      if ($page_match == 0) {
+	return;
+      }
+    }
+    $node = node_load($_SESSION['gae_nid']);
+    if (is_object($node) && $node->nid) {
+      // Build the google analytics ecommerce JS code
+      $gae_script = google_analytics_ecommerce_js($node);
+      // Add our JS code into the 'googleanalytics_codesnippet_before' 
+      // variable used by googleanalytics module.
+      $GLOBALS['conf']['googleanalytics_codesnippet_after'] .= $gae_script;
+    }
+    // Clean out gae SESSION variable.
+    unset($_SESSION['gae_nid']);
+    unset($_SESSION['gae_nid_type']);
+  }
+}
+
+/**
+ * Build the e-commerce JS passed to Google Analytics for transaction tracking.
+ *
+ * @param $node
+ *   Loaded node object to fill the transaction JS code
+ * @return
+ *   JS code that will be added to the page footer.
+ */
+function google_analytics_ecommerce_js($node) {
+  // Let's fill in the dinamycs vars
+  foreach (array('price','quantity','shipping','tax','city','state','country') as $var) {
+    // If we use CCK, we look for the value source: field or fixed in the settings form
+    if (module_exists('content')) {
+      if (variable_get('gae_' . $var . '_' . $node->type, 'num') == 'num') {
+	// Use fixed value
+	$node->$var = variable_get('gae_' . $var . '_num_value_' . $node->type, '');
+      }
+      else {
+	// Get value from content field
+	$field_name = variable_get('gae_' . $var . '_field_name_' . $node->type, '');
+	$field_data = $node->$field_name;
+	$node->$var = drupal_to_js(check_plain($field_data[0]['value']));
+      }
+    }
+    else {
+      // CCK not available, so use fixed value
+      $node->$var = variable_get('gae_' . $var . '_num_value_' . $node->type, '');
+    }
+  }
+  if (module_exists('taxonomy') && variable_get('gae_category_vid_' .  $node->type, "num") == "num") {
+    // Get category for the node
+    $vid = variable_get('gae_category_vid_value_' .  $node->type, '');
+    $terms = taxonomy_node_get_terms_by_vocabulary($node, $vid);
+    if (count($terms)) {
+      // We get just the first term
+      $term = array_shift($terms);
+      $node->category = drupal_to_js(check_plain($term->name));
+    }
+  }
+  elseif (module_exists('content') && variable_get('gae_category_field_' .  $node->type, "num") == "field") {  
+    // get configured field name
+    $field_name = variable_get('gae_category_field_val_' .  $node->type, "");
+    $field_data = $node->$field_name;
+    $node->category = drupal_to_js(check_plain($field_data[0]['value']));
+  }
+  if (empty($node->category)) {
+    $product->category = drupal_to_js(t('No category'));
+  }
+
+  // We build a value for transactions that we increment
+  // Is interesting to use nid, but as long as we can work 
+  // with updated nodes we should not use just nid
+  $trans->order_id = $node->nid . "-" . variable_get('gae_order_id', 1);
+  variable_set('gae_order_id', variable_get('gae_order_id', 1) + 1);
+
+  // Check required values
+  if (!is_numeric($node->price)) {
+    $node->price = 0;
+  }
+  if (!is_numeric($node->cuantity) || $node->cuantity < 1) {
+    $node->cuantity = 1;
+  }
+
+  // Calculate totals
+  $trans->price_total = $node->quantity * $node->price;
+  $trans->tax_total = $node->quantity * $node->tax;
+  $trans->shipping_total = $node->quantity * $node->shipping;
+
+  // Build transaction
+  $transaction = array(
+    'order_id' => $trans->order_id,
+    'store'    => variable_get('site_name', ''),
+    'total'    => $trans->price_total,
+    'tax'      => $trans->tax_total,
+    'shipping' => $trans->shipping_total,
+    'city'     => $node->city, 
+    'state'    => $node->state, 
+    'country'  => $node->country, 
+  );
+  $tr_args = array(
+     "'". $transaction['order_id'] ."'",
+     "'". $transaction['store'] ."'",
+     "'". $transaction['total'] ."'",
+     "'". $transaction['tax'] ."'",
+     "'". $transaction['shipping'] ."'",
+     "'". $transaction['city'] ."'",
+     "'". $transaction['state'] ."'",
+     "'". $transaction['country'] ."'",
+  );
+  
+  // Build item
+  $item = array(
+    'order_id' => $trans->order_id,
+    'sku'      => $node->type,
+    'name'     => $node->title,
+    'category' => $node->category,
+    'price'    => $node->price,
+    'quantity' => $node->quantity,
+  );
+  $it_args = array(
+     "'". $item['order_id'] ."'",
+     "'". $item['sku'] ."'",
+     "'". $item['name'] ."'",
+     "'". $item['category'] ."'",
+     "'". $item['price'] ."'",
+     "'". $item['quantity'] ."'",
+  );
+  
+  // By the moment, we just use async GA script
+  // Add transaction
+  $async_script .= "_gaq.push(['_addTrans'," . implode(', ', $tr_args) ."]);";
+  // Add item
+  $async_script .= "_gaq.push(['_addItem'," .implode(', ', $it_args) ."]);";
+  // Add tracking
+  $async_script .= "_gaq.push(['_trackTrans']);";
+
+  return $async_script;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function google_analytics_ecommerce_form_alter(&$form, $form_state, $form_id) {
+  // Provide ecommerce tracking configuration in node type form
+
+  if ($form_id == 'node_type_form') {    
+    $form['gae'] = array(
+      '#type'        => 'fieldset',
+      '#title'       => t('Google Analytics Ecommerce'),
+      '#collapsible' => TRUE,
+      '#collapsed'   => TRUE,
+      '#weight'      => (function_exists('content_extra_field_weight') && isset($form['type'])) ? content_extra_field_weight($form['type']['#value'], 'google_analytics_ecommerce') : 30,
+    );
+    // Enable tracking
+    $form['gae']['gae_enabled'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Enable Google Analytics Ecommerce'),
+      '#description'   => t('When a node of this type of content is created, track Google Analytics Ecommerce data for it'),
+      '#default_value' => variable_get('gae_enabled_' . $form['#node_type']->type, 0),
+    );
+    // General settings
+    $form['gae']['gae_settings'] = array(
+      '#type'        => 'fieldset',
+      '#title'       => t('General settings'),
+      '#collapsible' => TRUE,
+      '#collapsed'   => TRUE,
+    );
+    $form['gae']['gae_settings']['gae_url'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Associate transaction tracking with an url'),
+      '#description'   => t('Keep track of e-commerce transaction after node insert (and optionally update), but only when (and if) a particular system path is visited. This allows to carry out tracking only if visitor really ends the ckeckout proccess, after tpv for example'),
+      '#default_value' => variable_get('gae_url_' . $form['#node_type']->type, 0),
+    );
+    $form['gae']['gae_settings']['gae_url_value'] = array(
+      '#type'          => 'textfield',
+      '#default_value' => variable_get('gae_url_value_' . $form['#node_type']->type, ''),
+      '#size'          => 60,
+      '#description'   => t('Specify the path where you wish to track the transaction, starting with \'/\'. For example: /node/checkout/thanks. Other parameters than \'q\' will not be taken into account.'),
+    );
+    $form['gae']['gae_settings']['gae_onupdate'] = array(
+      '#type'          => 'checkbox',
+      '#title'         => t('Track node updates'),
+      '#description'   => t('Track Google Analytics Ecommerce also when node is updated. This is usefull if you are working with node revisions for example'),
+      '#default_value' => variable_get('gae_onupdate_' . $form['#node_type']->type, 0),
+    );
+    // CCK is not mandatory, so we render different form if we can use it
+    if (module_exists('content')) {
+      // Get field list for this content type
+      $field_options = array();
+      $result = db_query("SELECT field_name, label FROM {" . content_instance_tablename() . "} " . 
+			 "WHERE type_name = '%s' " .
+			 "AND widget_active = 1 " , 
+			 $form['#node_type']->type);
+      while ($field = db_fetch_array($result)) {
+	$field_options[$field['field_name']] = $field['label']; 
+      }
+      // So if CCK is present, and content type has configured fields we can use them
+      if (!empty($field_options)) {
+	_google_analytics_ecommerce_form_content($form, $field_options);
+      }
+    }
+    else {
+      _google_analytics_ecommerce_form_standard($form);
+    }
+  }
+}
+
+/**
+ * Build rest of settings form if we can NOT use content fields 
+ *
+ * @param &$form
+ *   The form to be build
+ * @return
+ *   None
+ */
+
+function _google_analytics_ecommerce_form_standard(&$form) {
+  // Set the price
+  $form['gae']['gae_price'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => t('Product price'),
+    '#collapsible'   => TRUE,
+    '#collapsed'     => TRUE,
+  );
+  $form['gae']['gae_price']['gae_price_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_price_num_value_' . $form['#node_type']->type, '0.0'),
+    '#size'          => 10,
+   );
+  // Set the quantity
+  $form['gae']['gae_quantity'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product quantity'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+  );
+  $form['gae']['gae_quantity']['gae_quantity_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_quantity_num_value_' . $form['#node_type']->type, '1'),
+    '#size'          => 10,
+  );
+  // Set category associated with taxonomy, else category will be not set
+  $form['gae']['gae_category'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => t('Product category'),
+    '#collapsible'   => TRUE,
+    '#collapsed'     => TRUE,
+  );
+  if (module_exists('taxonomy')) {
+    $vocabularies = taxonomy_get_vocabularies($form['#node_type']->type);
+    if ($vocabularies) {
+      foreach ($vocabularies as $vid => $vdata) {
+	$vocab_options[$vid] = $vdata->name;
+      }
+      $form['gae']['gae_category']['gae_category_vid_value'] = array(
+        '#type'          => 'select',
+	'#title'         => t('Select the vocabulary associated with product category'),
+	'#default_value' => variable_get('gae_category_vid_value_' . $form['#node_type']->type, ''),
+	'#options'       => $vocab_options,
+     );
+    }
+    else {
+      $form['gae']['gae_category']['info'] = array(
+       '#type' => 'item',
+       '#value' => t('There are no vocabulary associated with this content type'),
+    );
+    }
+  }
+  else {
+    $form['gae']['gae_category']['info'] = array(
+      '#type' => 'item',
+      '#value' => t('You have to use taxonomy module or content module to set product category'),
+    );
+  }
+  // Set the tax
+  $form['gae']['gae_tax'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product tax'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+  );
+  $form['gae']['gae_tax']['gae_tax_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_tax_num_value_' . $form['#node_type']->type, '0'),
+    '#size'          => 10,
+  );
+  // Set the shipping
+  $form['gae']['gae_shipping'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product shipping'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+  );
+  $form['gae']['gae_shipping']['gae_shipping_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_shipping_num_value_' . $form['#node_type']->type, '0'),
+    '#size'          => 10,
+  );
+  // Set the city
+  $form['gae']['gae_city'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product city'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+  );
+  $form['gae']['gae_city']['gae_city_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_city_num_value_' . $form['#node_type']->type, ''),
+    '#size'          => 30,
+    );
+  // Set the state
+  $form['gae']['gae_state'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product state'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+  );
+  $form['gae']['gae_state']['gae_state_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_state_num_value_' . $form['#node_type']->type, ''),
+    '#size'          => 30,
+  );
+  // Set the country
+  $form['gae']['gae_country'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product country'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+  );
+  $form['gae']['gae_country']['gae_country_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_country_num_value_' . $form['#node_type']->type, ''),
+    '#size'          => 30,
+  );
+}
+
+/**
+ * Build rest of settings form if we can use content fields 
+ *
+ * @param &$form
+ *   The form to be build
+ * @return
+ *   None
+ */
+function _google_analytics_ecommerce_form_content(&$form, $field_options) {
+  // Set the price
+  $form['gae']['gae_price'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => t('Product price'),
+    '#collapsible'   => TRUE,
+    '#collapsed'     => TRUE,
+    '#prefix'        => '<div class="form-radios">',
+    '#suffix'        => '</div>',
+  );
+  $form['gae']['gae_price']['gae_price_num'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Set the price here'),
+    '#return_value'  => 'num',
+    '#default_value' => variable_get('gae_price_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_price'),
+    '#prefix'        => '<div class="container-inline form-item">',
+						     );
+  $form['gae']['gae_price']['gae_price_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_price_num_value_' . $form['#node_type']->type, '0.0'),
+    '#size'          => 10,
+    '#suffix'        => '</div>',
+   );
+  $form['gae']['gae_price']['gae_price_field'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Get the price from a cck field'),
+    '#return_value'  => 'field',
+    '#default_value' => variable_get('gae_price_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_price'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_price']['gae_price_field_name'] = array(
+    '#type'          => 'select',
+    '#default_value' => variable_get('gae_price_field_name_' . $form['#node_type']->type, ''),
+    '#options'       => $field_options,
+    '#suffix'        => '</div>',
+   );
+  // Set the quantity
+  $form['gae']['gae_quantity'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product quantity'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#prefix' => '<div class="form-radios">',
+    '#suffix' => '</div>',
+  );
+  $form['gae']['gae_quantity']['gae_quantity_num'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Set the quantity here'),
+    '#return_value'  => 'num',
+    '#default_value' => variable_get('gae_quantity_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_quantity'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_quantity']['gae_quantity_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_quantity_num_value_' . $form['#node_type']->type, '1'),
+    '#size'          => 10,
+    '#suffix'        => '</div>',
+  );
+  $form['gae']['gae_quantity']['gae_quantity_field'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Get the quantity from a cck field'),
+    '#return_value'  => 'field',
+    '#default_value' => variable_get('gae_quantity_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_quantity'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_quantity']['gae_quantity_field_name'] = array(
+    '#type'          => 'select',
+    '#default_value' => variable_get('gae_quantity_field_name_' . $form['#node_type']->type, ''),
+    '#options'       => $field_options,
+    '#suffix'        => '</div>',
+  );
+  // Set category 
+  $form['gae']['gae_category'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => t('Product category'),
+    '#collapsible'   => TRUE,
+    '#collapsed'     => TRUE,
+  );
+  if (module_exists('taxonomy')) {
+    $vocabularies = taxonomy_get_vocabularies($form['#node_type']->type);
+    if ($vocabularies) {
+      // Just use radios if we can use vocabulary or content field
+      $form['gae']['gae_category']['gae_category_vid'] = array(
+        '#type'          => 'radio',
+	'#title'         => t('Get category from this vocabulary'),
+	'#return_value'  => 'num',
+	'#default_value' => variable_get('gae_category_' . $form['#node_type']->type, 'num'),
+	'#parents'       => array('gae_category'),
+	'#prefix'        => '<div class="container-inline form-item">',
+      );
+      foreach ($vocabularies as $vid => $vdata) {
+	$vocab_options[$vid] = $vdata->name;
+      }
+      $form['gae']['gae_category']['gae_category_vid_value'] = array(
+        '#type'          => 'select',
+	'#default_value' => variable_get('gae_category_vid_value_' . $form['#node_type']->type, ''),
+	'#options'       => $vocab_options,
+	'#suffix'        => '</div>',
+     );
+      $form['gae']['gae_category']['gae_category_field'] = array(
+        '#type'          => 'radio',
+	'#title'         => t('Get category from this content_field'),
+	'#return_value'  => 'field',
+	'#default_value' => variable_get('gae_category_' . $form['#node_type']->type, 'num'),
+	'#parents'       => array('gae_category'),
+	'#prefix'        => '<div class="container-inline form-item">',
+      );
+    }
+    $form['gae']['gae_category']['gae_category_field_val'] = array(
+      '#type'          => 'select',
+      '#default_value' => variable_get('gae_category_field_val_' . $form['#node_type']->type, ''),
+      '#options'       => $field_options,
+      '#title'        => ($vocabularies) ? '' : t('Get category from this content field'),
+      '#suffix'        => ($vocabularies) ? '</div>' : '',
+    );
+  }  
+  // Set tax
+  $form['gae']['gae_tax'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product tax'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#prefix'      => '<div class="form-radios">',
+    '#suffix'      => '</div>',
+  );
+  $form['gae']['gae_tax']['gae_tax_num'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Set the tax here'),
+    '#return_value'  => 'num',
+    '#default_value' => variable_get('gae_tax_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_tax'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_tax']['gae_tax_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_tax_num_value_' . $form['#node_type']->type, '0'),
+    '#size'          => 10,
+    '#suffix'        => '</div>',
+  );
+  $form['gae']['gae_tax']['gae_tax_field'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Get the tax from a cck field'),
+    '#return_value'  => 'field',
+    '#default_value' => variable_get('gae_tax_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_tax'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_tax']['gae_tax_field_name'] = array(
+    '#type'          => 'select',
+    '#default_value' => variable_get('gae_tax_field_name_' . $form['#node_type']->type, ''),
+    '#options'       => $field_options,
+    '#suffix'        => '</div>',
+  );
+  // Set the shipping cost
+  $form['gae']['gae_shipping'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product shipping'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#prefix'      => '<div class="form-radios">',
+    '#suffix'      => '</div>',
+  );
+  $form['gae']['gae_shipping']['gae_shipping_num'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Set the shipping here'),
+    '#return_value'  => 'num',
+    '#default_value' => variable_get('gae_shipping_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_shipping'),
+    '#prefix'        => '<div class="container-inline form-item">',
+    );
+  $form['gae']['gae_shipping']['gae_shipping_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_shipping_num_value_' . $form['#node_type']->type, '0'),
+    '#size'          => 10,
+    '#suffix'        => '</div>',
+  );
+  $form['gae']['gae_shipping']['gae_shipping_field'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Get the shipping from a cck field'),
+    '#return_value'  => 'field',
+    '#default_value' => variable_get('gae_shipping_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_shipping'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_shipping']['gae_shipping_field_name'] = array(
+    '#type'          => 'select',
+    '#default_value' => variable_get('gae_shipping_field_name_' . $form['#node_type']->type, ''),
+    '#options'       => $field_options,
+    '#suffix'        => '</div>',
+  );
+  // Set the city
+  $form['gae']['gae_city'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product city'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#prefix'      => '<div class="form-radios">',
+    '#suffix'      => '</div>',
+  );
+  $form['gae']['gae_city']['gae_city_num'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Set the city here'),
+    '#return_value'  => 'num',
+    '#default_value' => variable_get('gae_city_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_city'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_city']['gae_city_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_city_num_value_' . $form['#node_type']->type, ''),
+    '#size'          => 30,
+    '#suffix'        => '</div>',
+    );
+  $form['gae']['gae_city']['gae_city_field'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Get the city from a cck field'),
+    '#return_value'  => 'field',
+    '#default_value' => variable_get('gae_city_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_city'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_city']['gae_city_field_name'] = array(
+    '#type'          => 'select',
+    '#default_value' => variable_get('gae_city_field_name_' . $form['#node_type']->type, ''),
+    '#options'       => $field_options,
+    '#suffix'        => '</div>',
+    );
+  // Set the state
+  $form['gae']['gae_state'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product state'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#prefix'      => '<div class="form-radios">',
+    '#suffix'      => '</div>',
+  );
+  $form['gae']['gae_state']['gae_state_num'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Set the state here'),
+    '#return_value'  => 'num',
+    '#default_value' => variable_get('gae_state_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_state'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_state']['gae_state_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_state_num_value_' . $form['#node_type']->type, ''),
+    '#size'          => 30,
+    '#suffix'        => '</div>',
+  );
+  $form['gae']['gae_state']['gae_state_field'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Get the state from a cck field'),
+    '#return_value'  => 'field',
+    '#default_value' => variable_get('gae_state_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_state'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_state']['gae_state_field_name'] = array(
+    '#type'          => 'select',
+    '#default_value' => variable_get('gae_state_field_name_' . $form['#node_type']->type, ''),
+    '#options'       => $field_options,
+    '#suffix'        => '</div>',
+  );
+  // Set the country
+  $form['gae']['gae_country'] = array(
+    '#type'        => 'fieldset',
+    '#title'       => t('Product country'),
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#prefix'      => '<div class="form-radios">',
+    '#suffix'      => '</div>',
+  );
+  $form['gae']['gae_country']['gae_country_num'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Set the country here'),
+    '#return_value'  => 'num',
+    '#default_value' => variable_get('gae_country_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_country'),
+    '#prefix'        => '<div class="container-inline form-item">',
+  );
+  $form['gae']['gae_country']['gae_country_num_value'] = array(
+    '#type'          => 'textfield',
+    '#default_value' => variable_get('gae_country_num_value_' . $form['#node_type']->type, ''),
+    '#size'          => 30,
+    '#suffix'        => '</div>',
+  );
+  $form['gae']['gae_country']['gae_country_field'] = array(
+    '#type'          => 'radio',
+    '#title'         => t('Get the country from a cck field'),
+    '#return_value'  => 'field',
+    '#default_value' => variable_get('gae_country_' . $form['#node_type']->type, 'num'),
+    '#parents'       => array('gae_country'),
+    '#prefix'        => '<div class="container-inline form-item">',
+   );
+  $form['gae']['gae_country']['gae_country_field_name'] = array(
+    '#type'          => 'select',
+    '#default_value' => variable_get('gae_country_field_name_' . $form['#node_type']->type, ''),
+    '#options'       => $field_options,
+    '#suffix'        => '</div>',
+  );
+}

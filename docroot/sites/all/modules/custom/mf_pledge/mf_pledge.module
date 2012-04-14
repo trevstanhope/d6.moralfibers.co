@@ -1,0 +1,12 @@
+<?php
+
+function mf_pledge_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#submit'][0] == 'uc_catalog_buy_it_now_form_submit') {
+  	$form['submit'] = array(
+			'#type' => 'image_button',
+			'#value' => t(' '),
+			'#src' => drupal_get_path('theme', 'moralfibers') . '/images/pledge.png'
+			);
+  }
+}
+

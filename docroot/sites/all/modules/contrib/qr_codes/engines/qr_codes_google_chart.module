@@ -1,0 +1,30 @@
+<?php
+// $Id: qr_codes_google_chart.module,v 1.1.2.1 2010/06/28 17:09:33 loubabe Exp $
+
+/**
+ * Implementation of hook_qr_codes().
+ */
+function qr_codes_google_chart_qr_codes($op, $a2 = NULL, $data = NULL, $width = NULL, $height = NULL, $margin = NULL) {
+  switch ($op) {
+    case 'list':
+      return array('qr_codes_google_chart:google_chart' => t('Google Chart API'));
+
+    case 'description':
+      return t('Google Chart API. See <a href="http://code.google.com/apis/chart/docs/gallery/qr_codes.html">http://code.google.com/apis/chart/docs/gallery/qr_codes.html</a>');
+
+    case 'config':
+      $form['qr_codes_google_chart_url'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Google Chart API URI'),
+        '#description' => t('Enter the URI for the Google Chart API service.'),
+        '#default_value' => variable_get('qr_codes_google_chart_url', 'http://chart.apis.google.com/chart'),
+      );
+      return $form;
+
+    case 'generate':
+      $url = variable_get('qr_codes_google_chart_url', 'http://chart.apis.google.com/chart') . sprintf('?cht=qr&chl=%s&chs=%dx%d&chld=%d', $data, $width, $height, $margin);
+      $image = drupal_http_request($url);
+      file_save_data($image->data, $a2, FILE_EXISTS_REPLACE);
+
+  }
+}

@@ -1,0 +1,153 @@
+<?php
+/**
+ * @file
+ * Provides configurable blocks of countdown timers.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function jquery_countdown_block_menu() {
+  $items['admin/build/block/add-jquery-countdown-block'] = array(
+    'title' => 'Add countdown block',
+    'description' => 'Add a new Countdown block.',
+    'access arguments' => array('administer blocks'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('jquery_countdown_block_add_block_form'),
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/build/block/delete-jquery-countdown-block'] = array(
+    'title' => 'Delete menu block',
+    'access arguments' => array('administer blocks'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('jquery_countdown_block_delete'),
+    'type' => MENU_CALLBACK,
+    'file' => 'jquery_countdown_block.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_help().
+ */
+function jquery_countdown_block_help($path, $arg) {
+  switch ($path) {
+    case 'admin/build/block/configure':
+      if ($arg[4] != 'jquery_countdown_block') {
+        break;
+      }
+    case 'admin/help#jquery-countdown-block':
+    case 'admin/build/block':
+    case 'admin/build/block/add-jquery-countdown-block':
+      //return _jquery_countdown_block_help($path, $arg);
+  }
+}
+
+/**
+ * Form builder for the countdown block addition form.
+ */
+function jquery_countdown_block_add_block_form(&$form_state) {
+  // Load block.admin.inc from block module.
+  module_load_include('inc', 'block', 'block.admin');
+  // Mimic block_add_block_form(), which is also just a wrapper.
+  return block_admin_configure($form_state, 'jquery_countdown_block', NULL);
+}
+
+/**
+ * Form submission handler for jquery_countdown_block_add_block_form().
+ */
+function jquery_countdown_block_add_block_form_submit($form, &$form_state) {
+  // Determine the delta of the new block.
+  $block_ids = variable_get('jquery_countdown_block_ids', array());
+  $delta = empty($block_ids) ? 1 : max($block_ids) + 1;
+
+  // Save the new array of blocks IDs.
+  $block_ids[] = $delta;
+  variable_set('jquery_countdown_block_ids', $block_ids);
+
+  // Save the block configuration.
+  _jquery_countdown_block_block_save($delta, $form_state['values']);
+
+  // Run the normal new block submission (borrowed from block_add_block_form_submit).
+  foreach (list_themes() as $key => $theme) {
+    if ($theme->status) {
+      db_query("INSERT INTO {blocks} (visibility, pages, custom, title, module, theme, status, weight, delta, cache) VALUES(%d, '%s', %d, '%s', '%s', '%s', %d, %d, %d, %d)",
+        $form_state['values']['visibility'],
+        trim($form_state['values']['pages']),
+        $form_state['values']['custom'],
+        $form_state['values']['title'],
+        $form_state['values']['module'],
+        $theme->name,
+        0,
+        0,
+        $delta,
+        BLOCK_CACHE_GLOBAL
+      );
+    }
+  }
+
+  foreach (array_filter($form_state['values']['roles']) as $rid) {
+    db_query("INSERT INTO {blocks_roles} (rid, module, delta) VALUES (%d, '%s', '%s')", $rid, $form_state['values']['module'], $delta);
+  }
+
+  drupal_set_message(t('The block has been created.'));
+  cache_clear_all();
+
+  $form_state['redirect'] = 'admin/build/block';
+  return;
+}
+
+/**
+ * Implements hook_block().
+ */
+function jquery_countdown_block_block($op = 'list', $delta = NULL, $edit = NULL) {
+  $function = '_jquery_countdown_block_block_' . $op;
+  switch ($op) {
+    case 'view':
+      return $function($delta, $edit);
+    default:
+      // Ops besides "view" are seldom used, so are in a separate file.
+      module_load_include('inc', 'jquery_countdown_block', 'jquery_countdown_block.admin');
+      return $function($delta, $edit);
+  }
+}
+
+/**
+ * Returns the 'view' $op info for hook_block().
+ *
+ * @param $delta
+ *   string The id of the block to render.
+ */
+function _jquery_countdown_block_block_view($delta) {
+  $data = array();
+
+  $caption = variable_get("jquery_countdown_block_{$delta}_caption", NULL);
+  $date = variable_get("jquery_countdown_block_{$delta}_date", NULL);
+  $until = variable_get("jquery_countdown_block_{$delta}_until", NULL);
+  $format = implode('', variable_get("jquery_countdown_block_{$delta}_format", array('D', 'H', 'M', 'S')));
+  $serversync = variable_get("jquery_countdown_block_{$delta}_serversync", FALSE);
+  // Pass in 'en_US' as the language, as translation breaks the settings we
+  // pass to theme_jquery_countdown() and thus the countdown script.
+  $formated_date = date_format_date(date_make_date($date), 'custom', 'F d, Y g:i a', 'en_US');
+  $data['subject'] = '';
+  $data['content'] = theme('jquery_countdown', array(
+    $until => $formated_date,
+    'format' => $format,
+    'description' => $caption,
+    'serversync' => $serversync,
+  ));
+
+  return $data;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for block_admin_display_form.
+ *
+ * Alters the block admin form to add delete links next to countdown blocks.
+ */
+function jquery_countdown_block_form_block_admin_display_form_alter(&$form, $form_state) {
+  foreach (variable_get('jquery_countdown_block_ids', array()) as $delta) {
+    $form['jquery_countdown_block_' . $delta]['delete'] = array('#value' => l(t('delete'), 'admin/build/block/delete-jquery-countdown-block/' . $delta));
+  }
+}

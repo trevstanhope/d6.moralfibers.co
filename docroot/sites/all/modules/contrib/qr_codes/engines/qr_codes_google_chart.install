@@ -1,0 +1,10 @@
+<?php
+// $Id: qr_codes_google_chart.install,v 1.1.2.1 2010/06/28 17:09:34 loubabe Exp $
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function qr_codes_google_chart_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE '%s_%%'", 'qr_codes_google_chart');
+  cache_clear_all('variables', 'cache');
+}

@@ -1,0 +1,6 @@
+127.0.0.1 -  -  [22/12/2011:14:56:52 +0000] "POST /solr/update?wt=json HTTP/1.0" 200 44 
+127.0.0.1 -  -  [22/12/2011:14:56:55 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [22/12/2011:14:56:56 +0000] "GET /solr/admin/luke?numTerms=0&wt=json HTTP/1.0" 200 4095 
+127.0.0.1 -  -  [22/12/2011:18:16:47 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [22/12/2011:22:16:44 +0000] "HEAD /solr/admin/ping HTTP/1.0" 200 0 
+127.0.0.1 -  -  [22/12/2011:22:16:46 +0000] "GET /solr/admin/luke?numTerms=0&wt=json HTTP/1.0" 200 4096 

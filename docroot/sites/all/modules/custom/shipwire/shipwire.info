@@ -1,0 +1,4 @@
+name = Shipwire
+description = Integration between Ubercart and Shipwire for automated order fulfillment.
+package = Ubercart
+core = 6.x

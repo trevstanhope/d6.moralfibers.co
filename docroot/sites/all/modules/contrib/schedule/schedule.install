@@ -1,0 +1,166 @@
+<?php
+// $Id: schedule.install,v 1.5 2010/05/07 18:08:31 MegaGrunt Exp $
+
+
+/**
+ * Implementation of hook_schema().
+ */
+function schedule_schema() {
+  $schema['schedule'] = array(
+    'description' => t('TODO'),
+    'fields' => array(
+      'schedule_id' => array(
+        'description' => t('TODO'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'schedule_title' => array(
+        'description' => t('TODO'),
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => t('TODO'),
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+      ),
+      'publication_id' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'start' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'first' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'previous' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'last' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'next' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'every' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'frequency' => array(
+        'description' => t('TODO'),
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => TRUE,
+      ),
+      'relative' => array(
+        'description' => t('TODO'),
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => TRUE,
+      ),
+      'relative_date' => array(
+        'description' => t('TODO'),
+        'type' => 'varchar',
+        'length' => 25,
+        'not null' => TRUE,
+      ),
+      'timeout' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('schedule_id'),
+  );
+
+  $schema['schedule_action'] = array(
+    'description' => t('TODO'),
+    'fields' => array(
+      'action_id' => array(
+        'description' => t('TODO'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => t('TODO'),
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+      ),
+      'publication_id' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'schedule_id' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => t('TODO'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'pub_time' => array(
+        'description' => t('TODO'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('action_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ *
+ * This will automatically install the database tables for the schedule module
+ * for the MySQL database.
+ *
+ * If you are using another database, you will have to install the tables by
+ * hand, using the queries below as a reference.
+ *
+ * Note that the curly braces around table names are a drupal-specific feature
+ * to allow for automatic database table prefixing, and will need to be removed.
+ */
+function schedule_install() {
+  // Create tables.
+  drupal_install_schema('schedule');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ * TODO: Delete variables.
+ */
+function schedule_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('schedule');
+
+}

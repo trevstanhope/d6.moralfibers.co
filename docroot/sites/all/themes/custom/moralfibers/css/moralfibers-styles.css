@@ -1,0 +1,113 @@
+a, 
+a:link,
+a:active,
+a:visited {
+	text-decoration: none;
+	color: rgb(47, 139, 201);
+}
+
+.mens-shop a {
+  color: #FFF;
+  text-decoration: none;
+}
+
+.womens-shop a {
+  color: #FFF;
+  text-decoration: none;
+}
+
+a:hover {
+/*	@TODO: Need;
+*/}
+
+
+h2.page-title,
+h2.title,
+.field-field-artist-video .field-label {
+	background: #000;
+	text-transform: uppercase;
+	color: #fff;
+	font-size: 24px;
+	padding: 13px 10px 4px;
+	clear: both;
+	border-bottom: 2px dotted #fff;
+	margin-bottom: 0px;
+
+}
+
+.node-type-artist h2.title {;
+	margin-bottom: 10px;
+
+}
+
+.node-type-blog h2.page-title,
+.node-type-product h2.page-title {
+	text-indent: -9999px;
+	position: absolute;
+	padding: 0px;
+}
+
+
+.page-title a {
+	color: #fff;
+	text-decoration: none;
+}
+
+.page-news-updates .region-content-top {
+	margin-bottom: 10px;
+}
+
+/* 
+ * Pager
+*/
+
+.item-list .pager {
+	text-align: right;
+	color: rgb(73, 90, 94);	
+	font-size: 10px;
+}
+
+.item-list .pager li {
+	padding:0.3em 0.1em;
+}
+
+.item-list .pager li,
+.item-list .pager li a,
+.item-list .pager li a.active {
+	color: rgb(73, 90, 94);	
+	text-decoration: none;
+	text-transform: uppercase;
+}
+
+.item-list .pager li.pager-current {
+	border-bottom: 1px solid rgb(73, 90, 94);
+}
+
+/* 
+ * Sections & Pages
+ * @note: This could possibly be worked into one of the myriad of CSS files but...
+*/
+
+.page-mens-shirts .region-content-top,
+.page-womens-shirts .region-content-top {
+	border: none;
+}
+
+/* positioning for header */
+#header-icons {
+  margin-top: -250px;
+  margin-left: 40px;
+  width: 350px;
+}
+
+.region-header-image {
+	width: 152px;
+	float: right;
+  margin-right: 6px;
+	margin-top: 15px;
+}
+
+/* fix for the blog page */
+body.node-type-blog h2.page-title {
+  background: none;
+}

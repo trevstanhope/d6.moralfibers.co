@@ -1,0 +1,63 @@
+/* 
+ * This file just defines the images used in content-top region across all the node-type pages. The image dimensions are fixed: 644 x 280
+*/
+
+
+/* Banner Images are 645px x 275px */
+
+.page-philosophy .region-content-top {
+	background: url('../images/banner-philosophy.jpg') no-repeat left top ;	
+}
+
+
+/*
+ * Do Not Modify Unless Necessary. This is the structure for Content-Top region
+ * 
+*/
+
+.node-type-page .region-content-top h2.title {
+	background: none;
+	border-bottom:5px dotted #FFFFFF;
+	font-size: 30px;
+	margin: 15px 0;
+	text-align: center;
+}
+
+.node-type-page .region-content-top .content {
+	padding: 0 15px;
+	color: #fff;
+	font-size: 14px;
+	line-height: 1.6em;
+	text-align: center;
+}
+
+.node-type-page .region-content-top .block {
+	float: right;
+	position: relative;
+	height: 300px;
+	width: 295px;
+	padding: 0 10px;
+	z-index: 10;
+	background: rgb(213,213,213);
+	background: -moz-linear-gradient(top, rgba(213,213,213,1) 0%, rgba(150,150,150,1) 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(213,213,213,1)), color-stop(100%,rgba(150,150,150,1)));
+	background: -webkit-linear-gradient(top, rgba(213,213,213,1) 0%,rgba(150,150,150,1) 100%);
+	background: -o-linear-gradient(top, rgba(213,213,213,1) 0%,rgba(150,150,150,1) 100%);
+	background: -ms-linear-gradient(top, rgba(213,213,213,1) 0%,rgba(150,150,150,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d5d5d5', endColorstr='#969696',GradientType=0 );
+	background: linear-gradient(top, rgba(213,213,213,1) 0%,rgba(150,150,150,1) 100%);
+}
+
+.page-team .region-content-top .content, .page-philosophy .region-content-top .content, .page-artists .region-content-top .content {
+  padding: 0;
+}
+
+.page-team .region-content-top .block, .page-philosophy .region-content-top .block, .page-artists .region-content-top .block {
+  width: 960px;
+  padding: 0;
+}
+
+.page-artists .region-content-top .content {
+  width: 960px;
+  padding: 0;
+}

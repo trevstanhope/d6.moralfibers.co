@@ -1,0 +1,876 @@
+<?php
+// $Id: schedule.module,v 1.10 2010/09/21 23:58:07 MegaGrunt Exp $
+
+/**
+ * Implementation of hook_help();
+ */
+function schedule_help($path = "admin/help#schedule", $arg) {
+  switch ($path) {
+    case 'admin/help#schedule' :
+      return t('Component: Manages scheduling information. Provides functionality to other modules.');
+  }
+}
+
+/**
+ * 
+ */
+function schedule_form_admin(&$form) {
+  if (!empty($form['schedule_id']['#value'])) {
+    $schedule = schedule_select_schedule($form['schedule_id']['#value']);
+  }
+
+  // Required form elements.
+  $form['schedule_id'] = array(
+    '#type' => 'value',
+    '#value' => $schedule['schedule_id'],
+  );
+  $form['first'] = array(
+    '#type' => 'value',
+    '#value' => $schedule['first'],
+  );
+  $form['last'] = array(
+    '#type' => 'value',
+    '#value' => $schedule['last'],
+  );
+  $form['frequency'] = array(
+    '#type' => 'value',
+    '#value' => 'manual',
+  );
+  $form['schedule_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Schedule Title'),
+    '#default_value' => $schedule['schedule_title'],
+    '#size' => 25,
+    '#maxlength' => 100,
+    '#description' => t("Example: 'Hourly', 'Daily', 'Weekly'. More schedules can be added later."),
+    '#attributes' => NULL,
+    '#required' => TRUE,
+  );
+
+  // Frequency.
+  $form['period'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Frequency'),
+    '#description' => t('How often this publication should be sent'),
+  );
+  $form['period']['every'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Every'),
+    '#default_value' => $schedule['every'],
+    '#size' => 5, '#maxlength' => 3,
+  );
+  $form['period']['frequency'] = array(
+    '#type' => 'radios',
+    '#title' => t('Frequency'),
+    '#default_value' => $schedule['frequency'],
+    '#options' => array(
+      'hour' => t('Hour(s)'),
+      'day' => t('Day(s)'),
+      'month' => t('Month(s)'),
+      'manual' => t('Manual'),
+    ),
+  );
+
+  // Relative controls.
+  $dates[0] = '-------';
+
+  // Profile date fields array.
+  $profile_dates = _schedule_profile_date_fields();
+
+  if (!empty($profile_dates)) {
+    $dates = $dates + $profile_dates;
+  }
+
+  // TODO.
+  if (empty($schedule['relative'])) {
+    $schedule['relative'] = 'on';
+  }
+
+  $form['relative'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Date Relative'),
+    '#description' => t('Make send out relative to selected date.'),
+  );
+  $form['relative']['relative_date'] = array(
+    '#type' => 'select',
+    '#title' => t('Date'),
+    '#default_value' => $schedule['relative_date'],
+    '#options' => $dates,
+    '#description' => NULL,
+    '#extra' => 0,
+    '#multiple' => NULL,
+  );
+  $form['relative']['relative'] = array(
+    '#type' => 'select',
+    '#title' => t('Send'),
+    '#default_value' => $schedule['relative'],
+    '#options' => array(
+      'before' => t('Before'),
+      'on' => t('On'),
+      'after' => t('After'),
+    ),
+    '#description' => t("If 'On' is selected the frequency options above have no effect."),
+    '#extra' => 0,
+    '#multiple' => NULL,
+  );
+
+  // Next send out.
+  if (!isset($schedule['next']) || $schedule['next'] == 0) {
+    $start_hour = ($schedule['next_hour']) ? $schedule['next_hour'] : '8';
+    $start_date = date("m/d/y", time());
+    $start_day = date("l, M j Y", time());
+  }
+  else {
+    $start_hour = ($schedule['next']) ? date('G', $schedule['next']) : $schedule['next_hour'];
+    $start_date = ($schedule['next']) ? date('m/d/y', $schedule['next']) : $schedule['next_date'];
+    $start_day = ($schedule['next']) ? date('l, M j Y', $schedule['next']) : date('l, M j Y', strtotime($schedule['next_date']));
+  }
+
+  $form['next'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Next Send'),
+    '#description' => t('Date and time to send next publication.'),
+  );
+  $form['next']['next_date'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Send (date)'),
+    '#default_value' => $start_date,
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('%start_day (mm/dd/yy)', array('%start_day' => $start_day)),
+  );
+
+  $form['next']['next_hour'] = array(
+    '#type' => 'select',
+    '#title' => t('Send (hour)'),
+    '#default_value' => $start_hour,
+    '#options' => array(
+      '1' => '1 a.m.',
+      '2' => '2 a.m.',
+      '3' => '3 a.m.',
+      '4' => '4 a.m.',
+      '5' => '5 a.m.',
+      '6' => '6 a.m.',
+      '7' => '7 a.m.',
+      '8' => '8 a.m.',
+      '9' => '9 a.m.',
+      '10' => '10 a.m.',
+      '11' => '11 a.m.',
+      '12' => '12 a.m.',
+      '13' => '1 p.m.',
+      '14' => '2 p.m.',
+      '15' => '3 p.m.',
+      '16' => '4 p.m.',
+      '17' => '5 p.m.',
+      '18' => '6 p.m.',
+      '19' => '7 p.m.',
+      '20' => '8 p.m.',
+      '21' => '9 p.m.',
+      '22' => '10 p.m.',
+      '23' => '11 p.m.',
+      '0' => '12 p.m.',
+    ),
+  );
+
+  // Time out.
+  $form['timeout'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Timeout'),
+    '#description' => t("If send out doesn't happen within the timeout period, don't send."),
+  );
+  $form['timeout']['timeout'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Hours'),
+    '#default_value' => empty($schedule['timeout']) ? 24 : $schedule['timeout'],
+    '#size' => 5,
+    '#maxlength' => 4,
+    '#required' => TRUE,
+  );
+
+  // Date to start including from.
+
+  // Schedule has already started - no need to display include field.
+  if (!empty($schedule['last']) && !empty($schedule['start'])) {
+    $form['start'] = array(
+      '#type' => 'hidden',
+      '#value' => date('m/d/y', $schedule['start']),
+    );
+    return $form;
+  }
+
+  $include_date = (empty($schedule['start'])) ? '1/1/99' : date('m/d/y', $schedule['start']);
+
+  $form['include'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Include'),
+    '#description' => t('On first send out, include nodes stating from this date.'),
+  );
+  $form['include']['start'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Include Nodes From (date)'),
+    '#default_value' => $include_date,
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('Leave blank to include all. (mm/dd/yy)'),
+  );
+}
+
+/**
+ * 
+ */
+function schedule_form_send_now($publication) {
+  $schedules = schedule_select_schedules($publication->type, $publication->publication_id);
+
+  foreach ($schedules as $schedule) {
+    $options[$schedule['schedule_id']] = $schedule['schedule_title'];
+  }
+
+  $form['schedules'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Send Now'),
+    '#default_value' => array(),
+    '#options' => $options,
+    '#description' => t('Select %publication schedules to be sent now (next cron run).', array('%publication' => $publication->title)),
+    '#attributes' => NULL,
+    '#required' => TRUE,
+  );
+  $form['publication_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $publication->publication_id,
+  );
+  $form['title'] = array(
+    '#type' => 'hidden',
+    '#value' => $publication->title,
+  );
+  $form['send'] = array(
+    '#type' => 'submit',
+    '#value' => t('Send'),
+  );
+  $form['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+  );
+
+  return $form;
+}
+
+/**
+ * 
+ */
+function schedule_insert_schedule($type, $schedule) {
+  if (isset ($schedule['next_date']) && !is_numeric($schedule['next_date'])) {
+    $schedule = schedule_convert_form_data($schedule);
+  }
+
+  db_query("INSERT INTO {schedule} (schedule_id, schedule_title, type, publication_id, start, first, next, last, every, frequency, relative, relative_date, timeout) VALUES (NULL, '%s', '%s', %d, %d, %d, %d, %d, %d, '%s', '%s', '%s', %d)", $schedule['schedule_title'], $type, $schedule['publication_id'], $schedule['start'], $schedule['first'], $schedule['next'], $schedule['last'], $schedule['every'], $schedule['frequency'], $schedule['relative'], $schedule['relative_date'], $schedule['timeout']);
+
+  return db_result(db_query("SELECT LAST_INSERT_ID()"));
+}
+
+/**
+ * 
+ */
+function schedule_update_schedule($type, $schedule) {
+  if (isset ($schedule['next_date']) && !is_numeric($schedule['next_date'])) {
+    $schedule = schedule_convert_form_data($schedule);
+  }
+
+  db_query("UPDATE {schedule} SET schedule_title = '%s', start = %d, first = %d, next = %d, last = %d, previous = %d, every = %d, frequency = '%s', relative = '%s', relative_date = '%s', timeout = %d WHERE schedule_id = %d AND type = '%s'", $schedule['schedule_title'], $schedule['start'], $schedule['first'], $schedule['next'], $schedule['last'], $schedule['previous'], $schedule['every'], $schedule['frequency'], $schedule['relative'], $schedule['relative_date'], $schedule['timeout'], $schedule['schedule_id'], $type);
+}
+
+/**
+ * 
+ */
+function schedule_update_send_now($type, $publication_id, $schedules, $time = NULL) {
+
+  if (empty($time)) {
+    $time = time();
+  }
+
+  foreach ($schedules as $schedule_id) {
+    if (!empty($schedule_id)) {
+      $schedule = schedule_select_schedule($schedule_id);
+      $templates = templates_usage_get('schedule', $schedule_id);
+      $templates = templates_convert_nid_vid($templates);
+      $schedule['vids'] = $templates;
+      $schedule['next'] = $time;
+      schedule_set_next_publication_time($schedule);
+      $schedules_updated[] = $schedule;
+    }
+  }
+
+  return $schedules_updated;
+}
+
+/**
+ * Get schedule from database (single).
+ */
+function schedule_load($schedule_id) {
+	if (!is_numeric($schedule_id)) {
+		return FALSE;
+	}
+	
+	$schedule = schedule_select_schedule($schedule_id);
+	
+	if (empty($schedule)) {
+		return FALSE;
+	}
+	
+	return $schedule;
+}
+
+/**
+ * Get schedule from database (single).
+ */
+function schedule_select_schedule($schedule_id, $un_cache = FALSE) {
+  static $schedules_static;
+
+  if ($un_cache) {
+    unset($schedules_static[$schedule_id]);
+  }
+
+  // Avoid making more than one database call for a schedule.
+  if (empty($schedules_static[$schedule_id])) {
+    $schedules_static[$schedule_id] = db_fetch_array(db_query("SELECT * FROM {schedule} WHERE schedule_id = %d LIMIT 1", $schedule_id));
+  }
+
+  return $schedules_static[$schedule_id];
+}
+
+/**
+ * Get schedule from database (single).
+ */
+function schedule_action_load($schedule_action_id) {
+	if (!is_numeric($schedule_action_id)) {
+		return FALSE;
+	}
+	
+  $schedule_action = db_fetch_array(db_query("SELECT * FROM {schedule_action} WHERE action_id = %d LIMIT 1", $schedule_action_id));
+
+	if (empty($schedule_action)) {
+		return FALSE;
+	}
+
+	return $schedule_action;
+}
+
+/**
+ * Get schedule from database (all).
+ */
+function schedule_select_schedules($type = NULL, $publication_id = NULL) {
+
+  if (!empty($publication_id)) {
+    $results = db_query("SELECT * FROM {schedule} WHERE publication_id = %d AND type = '%s'", $publication_id, $type);
+  }
+
+  if (!empty($type) && empty($publication_id)) {
+    $results = db_query("SELECT * FROM {schedule} WHERE type = '%s'", $type);
+  }
+
+  if (empty($type) && empty($publication_id)) {
+    $results = db_query("SELECT * FROM {schedule}");
+  }
+
+  while ($row = db_fetch_array($results)) {
+    list($row['source_table'], $row['source_id']) = explode('|', $row['relative_date']);
+    $schedules[$row['schedule_id']] = $row;
+  }
+
+  return $schedules;
+}
+
+/**
+ * 
+ */
+function schedule_delete_publication_schedules($type, $publication_id) {
+  db_query("DELETE FROM {schedule} WHERE publication_id = %d AND type = '%s'", $publication_id, $type);
+}
+
+/**
+ * 
+ */
+function schedule_delete($schedule_id) {
+  db_query("DELETE FROM {schedule} WHERE schedule_id = %d", $schedule_id);
+  db_query("DELETE FROM {schedule_action} WHERE schedule_id = %d", $schedule_id);
+}
+
+/**
+ * Get revision IDs for template.
+ * TODO: might move this to templates?
+ */
+function schedule_revision_select_db($type, $publication_id, $schedule_id, $pub_time) {
+  $vid = db_result(db_query("SELECT vid FROM {schedule_action} WHERE publication_id = %d AND schedule_id = %d AND pub_time = %d AND type = '%s'", $publication_id, $schedule_id, $pub_time, $type));
+  $vid = unserialize($vid);
+  return $vid;
+}
+
+/**
+ * Check it's time to display this schedule.
+ * Publication time 0 means schedule is set to manual.
+ */
+function schedule_activate($next) {
+  $activate = ($next != 0 && $next <= time()) ? TRUE : FALSE;
+  return $activate;
+}
+
+/**
+ * 
+ */
+function schedule_validate_title($form_values) {
+  // Check title has been set.
+  if (!$form_values['schedule_title']) {
+    form_set_error('schedule_title', t("Schedule Title: must be set."));
+  }
+}
+
+/**
+ * 
+ */
+function schedule_validate_frequency($edit) {
+  if ($edit['frequency'] == 'manual') {
+    return;
+  }
+
+  // Check frequency amount has been set correctly.
+  if (!isset ($edit['every']) || !is_numeric($edit['every']) || $edit['every'] == 0) {
+    form_set_error('every', t("Send Schedule: Please set a number for 'Every'"));
+  }
+}
+
+/**
+ * 
+ */
+function schedule_validate_timeout($edit) {
+  // Check timeout amount has been set correctly.
+  if (empty($edit['timeout']) || !is_numeric($edit['timeout']) || $edit['timeout'] == 0) {
+    form_set_error('timeout', t("Timeout: the number of hours must be set"));
+  }
+}
+
+/**
+ * 
+ */
+function schedule_validate_relative($edit) {
+  if (empty($edit['relative_date'])) {
+    form_set_error('relative_date', t('Date: must be set'));
+  }
+  if (empty($edit['relative'])) {
+    form_set_error('relative', t('Send: option must be set'));
+  }
+}
+
+/**
+ * 
+ */
+function schedule_validate_next_send($edit) {
+  if ($edit['frequency'] == 'manual') {
+    return;
+  }
+
+  // Check there is a publication date.
+  if (!isset ($edit['next_date']) || $edit['next_date'] == 0) {
+    return form_set_error('next_date', t("Next Send: 'Send (date)' must be set."));
+  }
+
+  $next = strtotime($edit['next_date']);
+  $next_array = getdate($next);
+
+  // Check date is valid.
+  if (checkdate($next_array['mon'], $next_array['mday'], $next_array['year']) == FALSE) {
+    return form_set_error('next_date', t("The 'Send Start' date is not correct, please use the mm/dd/yy format."));
+  }
+
+  // Convert time to unix timestamp.
+  $edit['next'] = mktime($edit['next_hour'], 0, 0, $next_array['mon'], $next_array['mday'], $next_array['year'], -1);
+
+  // Check publication time hasn't passed.
+  if ($edit['next'] <= time()) {
+    form_set_error('next_hour', t("The 'Send Start' date has already passed."));
+  }
+}
+
+/**
+ * 
+ */
+function schedule_validate_included($edit) {
+  // Check this is first publication.
+  if (isset ($edit['last']) && $edit['last'] != 0) {
+    return;
+  }
+
+  // Default start date.
+  if (!isset ($edit['start']) || $edit['start'] == 0) {
+    return;
+  }
+
+  // Convert time to unix timestamp.
+  $edit['start'] = strtotime($edit['start']);
+
+  // Check date is valid.
+  $include_nodes_date = getdate($edit['start']);
+  if (!checkdate($include_nodes_date['mon'], $include_nodes_date['mday'], $include_nodes_date['year'])) {
+    form_set_error('start', t("The 'Include Nodes From' date is not correct, please use the mm/dd/yy format."));
+  }
+
+  // Check date is in past.
+  if ($edit['start'] > time()) {
+    form_set_error('start', t("The 'Include Nodes From' date cannot be in future, has been reset to today's date."));
+  }
+}
+
+/**
+ * Check if ready to send on next cron run.
+ */
+function schedule_check_send_ready($type, $publication_id) {
+  $schedule = schedule_select_schedules($type, $publication_id);
+  $time = ($schedule['next'] < time()) ? TRUE : FALSE;
+  return $ready;
+}
+
+/**
+ * Get count of sent.
+ */
+function schedule_count_sent($type, $publication_id, $publication_timestamp, $schedule_id) {
+  // Publication hasn't started sending.
+  if ($publication_timestamp > time() || $publication_timestamp == 0) {
+    return 0;
+  }
+
+  $sent_count = db_result(db_query("SELECT count(s.sent) FROM {schedule_action} a LEFT JOIN {subscribed_sent} s ON a.action_id = s.action_id WHERE a.type = '%s' AND a.publication_id = %d AND a.schedule_id = %d AND a.pub_time = %d", $type, $publication_id, $schedule_id, $publication_timestamp));
+
+  return $sent_count;
+}
+
+/**
+ * Calculate time of next scheduled send out.
+ */
+function schedule_publication_time($previous, $frequency, $every) {
+  if ($frequency == 'manual') {
+    return 0;
+  }  
+
+  $previous = getdate($previous);
+
+  switch ($frequency) {
+    case 'hour' :
+      $publication_time = mktime($previous['hours'] + $every, $previous['minutes'], $previous['seconds'], $previous['mon'], ($previous['mday']), $previous['year'], -1);
+      break;
+    case 'day' :
+      $publication_time = mktime($previous['hours'], $previous['minutes'], $previous['seconds'], $previous['mon'], ($previous['mday'] + $every), $previous['year'], -1);
+      break;
+    case 'month' :
+      $publication_time = mktime($previous['hours'], $previous['minutes'], $previous['seconds'], ($previous['mon'] + $every), $previous['mday'], $previous['year'], -1);
+      break;
+  }
+
+  return $publication_time;
+}
+
+/**
+ * Get count of queued.
+ */
+function schedule_count_queued($type, $publication_id, $publication_timestamp, $schedule_id) {
+  // Publication hasn't started sending.
+  if ($publication_timestamp > time() || $publication_timestamp == 0) {
+    return 0;
+  }
+
+  $queued_count = db_result(db_query("SELECT COUNT(*) FROM {subscribed} s LEFT JOIN {users} u ON s.uid = u.uid LEFT JOIN {bounced_email_count} b ON u.mail = b.email 
+    LEFT JOIN {schedule_action} a ON (a.type = s.type AND a.publication_id = s.publication_id AND a.pub_time = %d) LEFT JOIN {subscribed_sent} m ON (m.uid = s.uid AND m.action_id = a.action_id) 
+    WHERE s.publication_id = %d AND s.schedule_id = %d AND s.type = '%s' AND (b.bounces IS NULL OR b.bounces < %d) AND m.sent IS NULL ORDER BY u.name ",
+    $publication_timestamp, $publication_id, $type, variable_get('bounce_limit', 1), $schedule_id));
+
+  return $queued_count;
+}
+
+/**
+ * Update schedule - unless relative.
+ */
+function schedule_set_next_publication_time($schedule) {
+  // Check time for update or relative.
+  if (empty($schedule['next']) || $schedule['next'] > time() || !empty($schedule['relative'])) {
+    return;
+  }
+
+  // Set record of schedule before it gets updated.
+  schedule_action_set($schedule['type'], $schedule['publication_id'], $schedule['schedule_id'], $schedule['next'], $schedule['vids']);
+
+  // Update timestamp fields.
+  $schedule['previous'] = $schedule['last'];
+  $schedule['last'] = $schedule['next'];
+  $schedule['next'] = schedule_publication_time($schedule['next'], $schedule['frequency'], $schedule['every']);
+
+  schedule_update_schedule($schedule['type'], $schedule);
+
+  return $schedule;
+}
+
+/**
+ * 
+ */
+function schedule_get_publication_time($type, $schedule_id, $uid) {
+  $schedule = schedule_select_schedule($schedule_id);
+
+  if ($schedule['frequency'] == 'manual') {
+    $publication_time = 0;
+  }
+  if ($schedule['frequency'] != 'manual' && empty($schedule['relative_date'])) {
+    $publication_time = $schedule['next'];
+  }
+
+  if (!empty($schedule['relative_date']) && $schedule['frequency'] != 'manual') {
+    
+    if (module_exists('profile')) {
+      $result = db_query('SELECT f.fid, f.type, v.value FROM {profile_fields} f INNER JOIN {profile_values} v ON f.fid = v.fid WHERE uid = %d', $uid);
+  
+      while ($field = db_fetch_object($result)) {
+        if (empty($profile[$field->fid])) {
+          $profile[$field->fid] = $field->value;
+        }
+      }
+    
+    }
+
+    $publication_time = schedule_relative_time($schedule['relative_date'], $schedule['relative'], $schedule['frequency'], $schedule['every'], $schedule['timeout'], $profile);
+  }
+
+  return $publication_time;
+}
+
+/**
+ * 
+ */
+function schedule_check_relative_update($type, $schedule_id, $uid, $value_new) {
+  $schedule = schedule_select_schedule($schedule_id);
+  list($source_table, $id) = explode('|', $schedule['relative_date']);
+  if (module_exists('profile')) {
+    $value_old = db_query('SELECT v.value {profile_values} v WHERE v.uid = %d AND v.fid = %d LIMIT 1', $uid, $id);
+  }
+  $updated = ($value_new == $value_old) ? FALSE : TRUE;
+  return $updated;
+}
+
+/**
+ * 
+ */
+function schedule_convert_form_data($schedule) {
+  if ($schedule['frequency'] == 'manual') {
+    $schedule['every'] = 0;
+    $schedule['next_date'] = 0;
+  }
+
+  if ($schedule['frequency'] != 'manual') {
+    // Convert 'next' time to unix timestamp.
+    $next = strtotime($schedule['next_date']);
+    $next_array = getdate($next);
+    $schedule['next'] = mktime($schedule['next_hour'], 0, 0, $next_array['mon'], $next_array['mday'], $next_array['year'], -1);
+
+    // Convert time to start including nodes from (for first publication).
+    $schedule['start'] = (!isset ($schedule['start']) || $schedule['start'] == 0) ? mktime(1, 0, 0, 1, 1, 1999, -1) : strtotime($schedule['start']);
+  }
+
+  return $schedule;
+}
+
+/**
+ * 
+ */
+function _schedule_profile_date_fields() {
+  $all_fields = _schedule_profile_fields();
+
+  foreach ($all_fields as $field) {
+    if ($field->type == 'date') {
+      $date_fields['profile|'. $field->fid] = t('Profile: ') . $field->name;
+    }
+  }
+
+  return $date_fields;
+}
+
+/**
+ * Get info about profile fields.
+ * 
+ * @param $key
+ *   An attribute of profile fields, e.g. name, fid.
+ * @param $return_value
+ *   Specifies the element to be returned.
+ * @return
+ *  Array of objects wit all profile field info. Or an element of the profile
+ *   field specified by $return_value.
+ */
+function _schedule_profile_fields($key = 'fid', $return_value = NULL) {
+
+  if (!module_exists('profile')) {
+    return array();
+  }
+
+  static $fields_static = array();
+
+  // Avoid making more than one database call for profile info.
+  if (empty($fields_static)) {
+    $results = db_query("SELECT * FROM {profile_fields}");
+
+    while ($row = db_fetch_object($results)) {
+      // Don't include private fields.
+      if (user_access('administer users') || $row->visibility != PROFILE_PRIVATE) {
+        $fields_static[] = $row;
+      }
+    }
+  }
+
+  // Return all profile fields info, or just specific type.
+  $fields = array();
+  if (empty($return_value)) {
+    foreach ($fields_static as $field) {
+      $fields[$field->{$key}] = $field;
+    }
+  }
+  else {
+    foreach ($fields_static as $field) {
+      $fields[$field->{$key}] = $field->{$return_value};
+    }
+  }
+
+  asort($fields);
+  return $fields;
+}
+
+/**
+ * Set record of schedule - before it gets updated.
+ */
+function schedule_action_set($type, $publication_id, $schedule_id, $pub_time, $vids) {
+  db_query("INSERT INTO {schedule_action} (type, publication_id, schedule_id, pub_time, vid) VALUES ('%s', %d, %d, %d, '%s')", $type, $publication_id, $schedule_id, $pub_time, serialize($vids));
+
+  $action_id = db_result(db_query("SELECT LAST_INSERT_ID()"));
+
+  return $action_id;
+}
+
+/**
+ * Get last action id of schedule.
+ */
+function schedule_action_select_db($type, $publication_id, $schedule_id) { 
+  $action_id = db_result(db_query("SELECT action_id FROM {schedule_action} WHERE publication_id = %d AND schedule_id = %d AND type = '%s' ORDER BY action_id DESC LIMIT 1", $publication_id, $schedule_id, $type));
+  return $action_id;
+}
+
+/**
+ * Based on a publication time - get next recorded publication time of a schedule.
+ */
+function schedule_action_next($type, $publication_id, $schedule_id, $pub_time) {
+  static $actions = array();
+
+  if (!empty($actions[$type][$publication_id][$schedule_id][$pub_time])) {
+    $next = ($actions[$type][$publication_id][$schedule_id][$pub_time] == 'none') ? 0 : $actions[$type][$publication_id][$schedule_id][$pub_time];
+  }
+  else {
+    // Current action id.
+    $action_id = db_result(db_query("SELECT action_id FROM {schedule_action} WHERE publication_id = %d AND schedule_id = %d AND pub_time = %d AND type = '%s'", $publication_id, $schedule_id, $pub_time, $type));
+    $next = db_result(db_query("SELECT pub_time FROM {schedule_action} WHERE publication_id = %d AND schedule_id = %d AND type = '%s' AND action_id > %d ORDER BY action_id LIMIT 1", $publication_id, $schedule_id, $type, $action_id));
+    $actions[$type][$publication_id][$schedule_id][$pub_time] = empty($next) ? 'none' : $next;
+  }
+
+  return $next;
+}
+
+/**
+ * Date relative schedule.
+ */
+function schedule_relative_time($source, $relation, $units, $amount, $timeout, $time_data) {
+
+  list($source_table, $id) = explode('|', $source);
+
+  switch ($source_table) {
+    case 'profile':
+      $time_data = $time_data[$id];
+      if (empty($time_data)) {
+        return;
+      }
+      $send_time = schedule_relative_to_profile($relation, $units, $amount, $time_data);
+      break;
+    case 'event':
+      break;
+    default :
+      break;
+  }
+
+  $timeout = $send_time + ($timeout * 3600);
+
+  if (time() > $timeout) {
+    return;
+  }
+
+  return $send_time;
+}
+
+/**
+ * 
+ */
+function schedule_relative_to_profile($relation, $units, $amount, $time_data) {
+
+  if (empty($time_data)) {
+    return;
+  }
+
+  $time = unserialize($time_data);
+
+  $time['hour'] = 0;
+
+  switch ($relation) {
+    case 'before':
+      if ($units == 'hour')
+        $time['hour'] = $time['hour'] - $amount;
+      if ($units == 'day')
+        $time['day'] = $time['day'] - $amount;
+      if ($units == 'month')
+        $time['month'] = $time['month'] - $amount;
+      break;
+    case 'after' :
+      if ($units == 'hour')
+        $time['hour'] = $time['hour'] + $amount;
+      if ($units == 'day')
+        $time['day'] = $time['day'] + $amount;
+      if ($units == 'month')
+        $time['month'] = $time['month'] + $amount;
+      break;
+    default :
+      break;
+  }
+
+  $send_time = mktime($time['hour'], 0, 0, $time['month'], $time['day'], $time['year']);
+
+  return $send_time;
+}
+
+/**
+ * 
+ */
+function schedule_update_schedules($uncache = FALSE) {
+  // Update only once per request - unless specified.
+  static $updated;
+  if ($uncache) {
+    $updated = FALSE;
+  }
+  if ($updated == TRUE) {
+    return;
+  }
+
+  // Get all schedules.
+  $schedules = schedule_select_schedules();
+
+  // Loop through schedules.
+  foreach ($schedules as $schedule) {
+    // Update schedule.
+    schedule_set_next_publication_time($schedule);
+  }
+
+  $updated = TRUE;
+  return;
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function schedule_cron() {
+  schedule_update_schedules();
+}

@@ -1,0 +1,18 @@
+; $Id: schedule.info,v 1.5 2010/09/21 23:58:07 MegaGrunt Exp $
+name = Schedule
+description = Manages scheduling information.
+package = Subscribed
+core = 6.x
+; Information added by drupal.org packaging script on 2010-05-07
+version = "6.x-1.0-beta1"
+core = "6.x"
+project = "schedule"
+datestamp = "1273255812"
+
+
+; Information added by drupal.org packaging script on 2010-09-22
+version = "6.x-1.1-beta2"
+core = "6.x"
+project = "schedule"
+datestamp = "1285113666"
+

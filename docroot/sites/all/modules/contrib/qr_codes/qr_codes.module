@@ -1,0 +1,222 @@
+<?php
+// $Id: qr_codes.module,v 1.2.2.3 2010/07/07 22:40:10 loubabe Exp $
+
+/**
+ * Implementation of hook_theme().
+ */
+function qr_codes_theme() {
+  return array('qr_codes' => array(
+    'arguments' => array('data' => NULL, 'width' => NULL, 'height' => NULL, 'margin' => NULL, 'imagecache_preset' => NULL, 'attributes' => NULL)
+  ));
+}
+
+/**
+ * Implementation of hook_perm().
+ *
+ * @see: http://api.drupal.org/api/function/hook_perm/6
+ */
+function qr_codes_perm() {
+  return array('administer qr_codes');
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ * @see: http://api.drupal.org/api/function/hook_menu/6
+ */
+function qr_codes_menu() {
+  $items = array();
+  $items['admin/settings/qr_codes'] = array(
+    'type' => MENU_NORMAL_ITEM,
+    'title' => 'QR Codes',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('qr_codes_settings'),
+    'access arguments' => array('administer qr_codes'),
+    'file' => 'qr_codes.admin.inc',
+  );
+  $items['admin/settings/qr_codes/default'] = array(
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'title' => 'Global Settings',
+    'access arguments' => array('administer qr_codes'),
+  );
+
+  // Build engine tabs.
+  foreach (module_invoke_all('qr_codes', 'list') as $key => $name) {
+    list($module, $id) = explode(':', $key, 2);
+    if (count(module_invoke($module, 'qr_codes', 'config', $id))) {
+      $items['admin/settings/qr_codes/'. $id] = array(
+        'type' => MENU_LOCAL_TASK,
+        'title' => $name,
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('qr_codes_engine_settings', $module, $id),
+        'access arguments' => array('administer qr_codes'),
+        'file' => 'qr_codes.admin.inc',
+        'weight' => 1,
+      );
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ * @see: http://api.drupal.org/api/function/hook_cron/6
+ */
+function qr_codes_cron() {
+  if (variable_get('qr_codes_cache_lifetime', 0)) {
+    $now = time();
+    $life = variable_get('qr_codes_cache_lifetime', 0) * 24 * 60 * 60;
+    foreach (file_scan_directory(file_directory_path() .'/qr_codes', '\.png$') as $file) {
+      if ($now - filemtime($file->filename) > $life) {
+        file_delete($file->filename);
+      }
+    }
+  }
+}
+
+/**
+ * Returns the file path of a qr code image
+ *
+ * @param string $data
+ * @param string $width
+ * @param string $height
+ * @param string $margin
+ * @param string $attributes
+ *
+ * @return file path
+ */
+function qr_codes_generate($data, $width, $height, $margin = 0) {
+  // Create a unique file name using all image attributes.
+  $imagename = md5($data . $width . $height . $margin) .'.png';
+  $dir = file_directory_path() . '/qr_codes/';
+  $file = $dir . $imagename;
+
+  // Cache locally.
+  if (!file_exists($file)) {
+    if (!file_check_directory($dir, FILE_CREATE_DIRECTORY)) {
+      drupal_set_message(t('Failed to create the qr_codes directory.'));
+      return '';
+    }
+
+    // Find out which module is handling the image generation.
+    list($module, ) = explode(':', variable_get('qr_codes_engine', 'qr_codes_google_chart:google_chart'), 2);
+
+    // Invoke the right module for file generation.
+    module_invoke($module, 'qr_codes', 'generate', $file, $data, $width, $height, $margin);
+  }
+
+  return $file;
+}
+
+/**
+ * Return a themed image tag of a qr code
+ *
+ * @param string $data
+ * @param string $width
+ * @param string $height
+ * @param string $margin
+ * @param string $attributes
+ * @return image tag
+ */
+function theme_qr_codes($data, $width = 150, $height = 150, $margin = 0, $alt = '', $title = '', $imagecache_preset = '', $attributes = array()) {
+  $file = qr_codes_generate($data, $width, $height, $margin, $attributes);
+  if (!empty($file)) {
+    if (function_exists('theme_imagecache') && !empty($imagecache_preset)) {
+      return theme('imagecache', $imagecache_preset, $file, $alt, $title, $attributes);
+    }
+    else {
+      return theme('image', $file, $alt, $title, $attributes);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function qr_codes_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+
+    case 'list':
+      $blocks[0]['info'] = t('QR Codes block');
+      return $blocks;
+
+    case 'configure':
+      if ($delta == 0) {
+        $form['qr_codes'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('QR Codes Node Block'),
+          '#collapsible' => FALSE,
+        );
+
+        $form['qr_codes']['qr_codes_block_data'] = array(
+          '#type' => 'textarea',
+          '#title' => t('Enter the text to embed in your barcode'),
+          '#description' => t('Available token replacement patterns are listed below and will be applied on node or user pages.'),
+          '#default_value' => variable_get('qr_codes_block_data', '')
+        );
+
+        if (module_exists('token')) {
+          $form['qr_codes']['tokens'] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Available Tokens'),
+            '#collapsible' => TRUE,
+            '#collapsed' => TRUE,
+          );
+
+          $form['qr_codes']['tokens']['help'] = array(
+            '#value' => theme('token_help', 'node'),
+          );
+        }
+
+        if(function_exists('imagecache_presets')){
+          $options = array('');
+          foreach((array)imagecache_presets() as $preset){
+            $options[$preset['presetname']] = $preset['presetname'];
+          }
+
+          $form['qr_codes']['qr_codes_block_imagecache_preset'] = array(
+            '#type' => 'select',
+            '#title' => t('Select an Imagecache preset'),
+            '#multiple' => FALSE,
+            '#description' => t('If selected, this imagecache preset will be applied to the barcode image.'),
+            '#options' => $options,
+            '#default_value' => variable_get('qr_codes_block_imagecache_preset', -1),
+          );
+
+        }
+      }
+      return $form;
+
+    case 'save':
+      if ($delta == 0) {
+        variable_set('qr_codes_block_data', $edit['qr_codes_block_data']);
+        if (!empty($edit['qr_codes_block_imagecache_preset'])) {
+          variable_set('qr_codes_block_imagecache_preset', $edit['qr_codes_block_imagecache_preset']);
+        }
+      }
+      break;
+
+    case 'view':
+      if ($delta == 0) {
+        $block['subject'] = t('QR Codes');
+
+        $data = variable_get('qr_codes_block_data', '');
+
+        // use token replacement if available for nodes and users
+        $tokens = module_exists('token');
+        global $user;
+        if (arg(0) == 'node' && is_numeric(arg(1)) && $tokens) {
+          $data = token_replace($data, 'node', node_load(arg(1)));
+        }
+        if($tokens && $user->uid) {
+          $data = token_replace($data, 'user', $user);
+        }
+
+        $block['content'] = theme('qr_codes', $data, 150, 150, 0, variable_get('qr_codes_block_imagecache_preset', ''));
+      }
+
+      return $block;
+  }
+}

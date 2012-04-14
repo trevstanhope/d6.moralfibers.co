@@ -1,0 +1,34 @@
+<?php
+/**
+ * @file
+ * Provides install, upgrade and un-install functions for jquery_countdown_block module.
+ */
+ 
+ function jquery_countdown_block_uninstall() {
+
+   // delete all jquery_countdown_block setting variables...
+   foreach (variable_get('jquery_countdown_block_ids', array()) AS $delta) {
+     variable_del("jquery_countdown_block_{$delta}_title_link");
+     variable_del("jquery_countdown_block_{$delta}_admin_title");
+     variable_del("jquery_countdown_block_{$delta}_parent");
+     variable_del("jquery_countdown_block_{$delta}_level");
+     variable_del("jquery_countdown_block_{$delta}_follow");
+     variable_del("jquery_countdown_block_{$delta}_depth");
+     variable_del("jquery_countdown_block_{$delta}_expanded");
+     variable_del("jquery_countdown_block_{$delta}_sort");
+   }
+
+   variable_del('jquery_countdown_block_ids');
+
+   // Remove block configurations.
+   db_query("DELETE FROM {blocks} WHERE module = 'jquery_countdown_blocks'");
+   db_query("DELETE FROM {blocks_roles} WHERE module = 'jquery_countdown_blocks'");
+   cache_clear_all();   
+ }
+ 
+ /**
+  * Implements hook_install().
+  */
+ function jquery_countdown_block_install() {
+   // No-op.
+ }

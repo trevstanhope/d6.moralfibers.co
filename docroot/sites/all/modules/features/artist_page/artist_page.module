@@ -1,0 +1,3 @@
+<?php
+
+include_once('artist_page.features.inc');

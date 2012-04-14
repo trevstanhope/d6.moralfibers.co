@@ -1,0 +1,364 @@
+/**
+ * @file
+ * Views Styling
+ */
+
+
+/**
+ * @section
+ * Featured Product. Appears on product listing pages
+ */
+
+.view-featured-images {
+	height: 300px;
+	clear: both;
+	margin-bottom: 35px;
+}
+
+.view-featured-images .views-row {
+	float: right;
+	width: 480px;
+	height: 280px;
+	border-width: 10px 0;
+	border-style: solid;
+	border-color: #000;
+}
+
+.view-featured-images .views-row:first-child {
+	float: left;
+}
+
+.view-random-listing td {
+  padding: 0 11px 0 11px;
+}
+
+/**
+ * @section
+ * Product Listing Pages
+ */
+.views-view-grid td {
+	vertical-align: top;
+	/* padding: 0 10px 30px; */
+}
+
+.view-mens-styles .views-view-grid td, .view-womens-styles .views-view-grid td {
+	vertical-align: top;
+	padding: 20px 10px;
+}
+
+body.page-artists .views-view-grid td {
+  padding: 0 10px 30px;
+}
+
+.views-view-grid .views-field-title {
+	margin: 5px 0;
+	font-size: 12px;
+	text-align: center;
+}
+
+.views-view-grid .views-field-title a {
+  font-size: 13px;
+	color: rgb(24,105,150);
+	text-decoration: none;
+		
+}
+
+.views-view-grid .views-field-field-tshirt-artist-nid,
+.views-view-grid .views-field-field-tshirt-artist-nid a {
+	color: rgb(47,139,201);
+  font-size: 11px;
+	text-decoration: none;
+	text-align: center;
+}
+
+/**
+ * @component
+ * Views Slideshow. Currentlu used for products
+ */
+.view-product-slideshow {
+	width: 633px;
+} 
+
+.views_slideshow_singleframe_main {
+	height: 460px;
+	overflow: hidden;
+	margin-bottom: 15px;
+}
+
+.views_slideshow_singleframe_pager div.pager-item {
+	margin-left: 5px;
+	padding: 0;
+}
+
+.views_slideshow_singleframe_pager div.pager-item.first {
+	margin: 0;
+}
+
+.views_slideshow_singleframe_pager div a img {
+	width: 150px;
+	height: 110px;
+	border: 2px solid rgb(229,229,229);
+}
+
+.views_slideshow_singleframe_pager div.activeSlide img,
+.views_slideshow_singleframe_pager div img:hover {
+	border: 2px solid rgb(0,0,0);
+}
+
+/**
+ * @component
+ * News Front Page & Updates View
+ * @TODO: These should be diplays of the same view
+ */
+
+.views-field-created {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+  text-transform: uppercase;
+	font-size: 11px;
+	font-weight: normal;
+}
+
+.view-news-updates .views-field-created,
+#content-area .view-news-updates .views-field-title {
+	color: rgb(169,180,183) ;
+	width: 120px
+}
+
+.view-header p {
+	margin: 0;
+}
+
+.view-news-updates .views-row,
+.view-Front .views-row {
+	margin-bottom: 7px;
+}
+
+.view-news-updates .view-header,
+.view-Front .view-header {
+  font-size: 24px;
+  line-height: 1;
+  border-top: gray dotted 2px;
+  border-bottom: gray dotted 2px;
+  padding: 11px 0 11px 45px;
+  text-transform: uppercase;
+  background: url(../images/star.png) no-repeat left;
+	margin-bottom: 10px;
+}
+
+.page-news-updates .view-news-updates .view-header {
+  background: url(../images/star.png) black no-repeat left;
+}
+
+#content-area .view-news-updates .views-field-title,
+#content-area .view-Front .views-field-title {
+	font-size: 16px;
+	position: relative;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	padding-left: 10px;
+	padding-right:300px; /* account for long title */
+	font-weight: bold;
+	font-family: Helvetica, sans-serif;
+	color: white;
+	background: black;
+	border-bottom: white dotted 1px;
+}
+
+body.page-news-updates #content-area .view-news-updates .views-field-title {
+  width: 320px; /* Override for the account page */
+}
+
+#content-area .view-news-updates .views-field-field-blog-image-fid {
+  margin-bottom: 10px;
+}
+
+.page-news-updates #content-area ..view-news-updates span.blog {
+  color: #FFF;
+}
+
+.page-news-updates #content-area .view-Front .views-field-title {
+	color: #fff;
+	background: #000;
+	padding: 10px;
+	clear: both;
+	border-bottom: 1px dotted #fff
+}
+
+.view-news-updates .view-header span.news,
+.view-Front .view-header span.news {
+  color: #495A5E;
+}
+
+.view-news-updates .view-header span.updated {
+  color: #A9B4B7;
+}
+
+.view-Front .view-header span.updated {
+  color: #A9B4B7;
+}
+
+.view-news-updates .views-field-view-node,
+.view-Front .views-field-view-node {
+  height: 22px;
+	line-height: 22px;
+	padding-right: 10px;
+}
+
+.view-Front .views-field-view-node a, 
+.view-news-updates .views-field-view-node a {
+  text-decoration: none;
+	float: right;
+  font-style: italic;
+}
+
+.view-news-updates .views-field-field-blog-image-fid,
+.view-Front .views-field-field-blog-image-fid {
+	height: 153px;
+	overflow: hidden;
+}
+
+.view-artist-art-design .views-view-grid td {
+	padding-right: 16px;
+	margin-bottom: 0px;
+}
+
+#jump-to-blog {
+  float: right;
+}
+
+#jump-to-blog a {
+  margin-top: -10px;
+}
+
+#jump-to-blog {
+  margin-top: -4px;
+}
+
+.view-Front .views-field-view-node {
+  background: #000;
+}
+
+#artist-biography p {
+  line-height: 2;
+}
+
+#jump-to-blog a,
+.view-Front .views-field-view-node a {
+	  color: #FFF;
+}
+
+.page-news-updates .view-news-updates .views-row {
+  border-bottom: #A9B4B7 dashed 1px;
+  padding: 10px 5px 25px 5px;
+}
+
+.block .view-news-updates .views-row {
+	padding: 5px 0;
+	margin-bottom: 15px;
+}
+
+.block .view-news-updates {
+	margin-bottom: 25px;
+	width: 280px;
+}
+
+#block-views-news_updates-block_1 h2.title {
+  margin-bottom: 5px;
+}
+
+.page-news-updates .view-news-updates .views-field-field-blog-image-fid {
+	border-bottom: 10px solid rgb(0,0,0);
+	width: 100%;
+	margin-top: 0;
+}
+.page-news-updates.view-news-updates .views-field-view-node a {
+  color: #2CA4CE;
+  font-family: Georgia, serif;	
+}
+
+/* 
+ * Random Artist Artwork Listing
+ * Appears on Featured Artists of Month (/artists)
+*/
+
+.view-artist-random-listing .views-field-field-artist-featured-image-fid, .view-random-listing .views-field-field-artist-featured-image-fid {
+  font-size: 12px;
+  color: black;
+}
+
+.view-artist-random-listing .views-field-field-artist-hometown-text-value, .view-random-listing .views-field-field-artist-hometown-text-value {
+  font-weight: bold;
+  color: #269CDD;
+	font-style: italic;
+	text-align: center;
+}
+
+.view-artist-random-listing .view-footer a {
+  float: right;
+  background: black;
+  color: white;
+  padding: 10px 15px 10px 15px;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+/* 
+ * Individual Artist Page Views
+*/
+
+.view-artist-art-design .field-item {
+	height: 75px;
+	margin-top: 10px;
+}
+
+.view-artist-art-design .field-item:first-child {
+	margin-top: 0px;
+}
+
+.node-type-artist .region-content-bottom h2.title {
+  color: white; 
+  font-size: 21px;
+}
+
+/**
+* Lookbook carousel
+**/
+.view-lookbook .jcarousel-prev {
+  background: url(../images/Button_previous.png) no-repeat;
+  width: 70px;
+  height: 30px;
+  float: left;
+  margin-left: 815px;
+}
+
+.view-lookbook .jcarousel-prev:hover {
+    background: url(../images/Button_previous_hover.png) no-repeat;
+}
+
+.view-lookbook .jcarousel-next {
+  background: url(../images/Button_next.png) no-repeat;
+  width: 70px;
+  height: 30px;
+  float: right;
+}
+
+.view-lookbook .jcarousel-next:hover {
+    background: url(../images/Button_next_hover.png) no-repeat;
+}
+
+#block-views-random_listing-block_1 {
+  background: #F2F2F2;
+}
+
+.view-random-listing p {
+  padding: 0 20px 10px 20px;
+  line-height: 2.2;
+}
+
+.view-random-listing .view-content {
+  padding-top: 10px;
+  background: white;
+}

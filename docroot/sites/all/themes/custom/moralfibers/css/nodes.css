@@ -1,0 +1,190 @@
+/**
+ * @file
+ * Node Styling
+ *
+ * Style anything that isn't in the $content variable.
+ */
+
+.node /* Node wrapper */ {
+}
+
+.node-sticky /* A sticky node (displayed before others in a list) */ {
+}
+
+.node-unpublished /* Unpublished nodes */ {
+  /* background-color: #fff4f4; */ /* Drupal core uses a #fff4f4 background */
+}
+
+.node-unpublished div.unpublished,
+.comment-unpublished div.unpublished /* The word "Unpublished" displayed underneath the content. */ {
+  height: 0;
+  overflow: visible;
+  color: #d8d8d8;
+  font-size: 75px;
+  line-height: 1;
+  font-family: Impact, "Arial Narrow", Helvetica, sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-align: center;
+  word-wrap: break-word; /* A very nice CSS3 property */
+}
+
+.node-by-viewer /* A node created by the current user */ {
+}
+
+.node-teaser /* A node displayed as teaser */ {
+}
+
+/*
+ * Common across multiple node types
+*/
+
+.node-type-artist h2.page-title,
+.product-header {
+	background: url('../images/burst-green.png') no-repeat 10px 5px;
+	border-top: 1px dashed rgb(169, 180, 183);
+	border-bottom: 1px dashed rgb(169, 180, 183);
+	text-transform: uppercase;
+	padding: 15px 0 10px 55px;
+	margin-bottom: 15px;
+}
+
+
+/* 
+ * node-product 
+*/
+
+.product-header .product-name {
+	font-size: 24px;
+}
+
+.product-header .artist-name {
+	color: rgb(47, 139, 201);
+	font-weight: bold;	
+}
+
+.product-meta {
+	color: rgb(73, 90, 94);
+	float: right;
+	width: 300px;
+}
+
+.product-meta .section-title {
+	font-size: 21px;
+	text-transform: uppercase;
+	margin: 0 0 10px;
+}
+
+
+#product-options {
+  padding: 15px;
+  border: 1px dashed rgb(169, 180, 183);
+  margin-top: 20px;	
+}
+
+#product-options .uc-price-display {
+	font-size: 36px;
+	float: none;
+	display: block;
+	margin-bottom: 15px;
+	line-height: 36px;
+}
+
+.uc-price-product {
+  width: 100%;
+  text-align: left;	
+}
+
+.artist-more {
+	text-align: right;
+}
+
+.artist-more a {
+  text-transform: uppercase;
+	color: rgb(73, 90, 94);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/*
+ * Artist Page
+*/ 
+
+.node-type-artist h2.page-title {
+	color: rgb(73, 90, 94);
+}
+
+.node-type-artist #artist-featured-image {
+	width: 630px;
+	height: 270px;
+	float: left;
+	border-top: 15px solid rgb(0,0,0);
+	border-bottom: 15px solid rgb(0,0,0);
+}
+
+.node-type-artist .region-artist-art-design {
+	width: 325px;
+	float: right;
+}
+
+.node-type-artist .node-content-top {
+	height: 300px;
+	margin-bottom: 15px;
+}
+
+.node-type-artist #artist-biography,
+.node-type-artist .node-content-bottom {
+	clear: both;
+}
+
+.node-type-artist #artist-biography .content,
+.node-type-artist #artist-charity-benefits .content {
+  -moz-column-count: 2;
+  -moz-column-gap: 20px;
+  -moz-column-width: 460px;
+  -webkit-column-count: 2;
+  -webkit-column-gap: 20px;
+  -webkit-column-width: 460px;
+  column-count: 2;
+  column-gap: 1em
+  column-width: 460px;
+}
+
+.node-type-artist #artist-biography .content {
+  margin: 30px 0 30px 0;
+}
+
+.node-type-artist .node-artists-video {
+	width: 470px;
+	float: right;
+}
+
+.node-type-artist .field-field-artist-video,
+.node-type-artist .region-artist-photo-gallery {
+	width: 460px;
+	float: left;
+}
+
+.node-type-artist .field-field-artist-video {
+	float: right;
+}
+
+.node-type-artist #artist-charity-benefits {
+	clear: both;
+	margin: 40px 0 0;
+  background: #F2F2F2;
+}
+
+.node-type-artist #artist-charity-benefits .content {
+  padding: 0 20px 10px 20px;
+  line-height: 2.2;
+}
+
+.marker /* "New" or "Updated" marker for content that is new or updated for the current user */ {
+  color: #c00;
+}
+
+.node.node-unpublished .picture,
+.comment.comment-unpublished .picture {
+  position: relative; /* Otherwise floated pictures will appear below the "Unpublished" text. */
+}

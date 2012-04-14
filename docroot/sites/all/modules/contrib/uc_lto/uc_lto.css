@@ -1,0 +1,16 @@
+/* $Id$ */
+
+.uc-lto-expiration-wrapper {
+  float: right;
+  clear: right;
+  margin: 0px 0px 1em 1em;
+}
+
+.uc-lto-expiration-hour {
+  color: #c60;
+}
+
+.uc-lto-expiration-min {
+  font-size: larger;
+  color: red;
+}

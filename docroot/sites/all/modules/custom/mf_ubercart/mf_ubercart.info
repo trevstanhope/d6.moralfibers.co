@@ -1,0 +1,4 @@
+name = MF Ubercart
+description = "Ubercart and product page customizations for Moral Fibers"
+package = Moral Fibers
+core = 6.x
